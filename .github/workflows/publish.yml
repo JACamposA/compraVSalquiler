@@ -1,14 +1,24 @@
-steps:
+name: Render and Publish
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
-          version: pre-release # This ensures we have the modern CLI flags
+          version: pre-release
 
       - name: Install WebR Extension
-        run: quarto add --no-ask coatless/quarto-webr # This flag works in modern Quarto
+        run: quarto add --no-ask coatless/quarto-webr
         
       - name: Render Quarto Project
         run: quarto render index.qmd
