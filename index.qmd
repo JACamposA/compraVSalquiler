@@ -15,6 +15,7 @@ library(ggplot2)
 library(dplyr)     # Load AFTER MASS so dplyr::select takes precedence
 library(tidyr)
 library(scales)
+library(Matrix)
 
 # Resolve MASS/dplyr conflicts explicitly
 select <- dplyr::select
