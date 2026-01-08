@@ -16,7 +16,7 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Install WebR Extension
-        run: run: quarto add --trust coatless/quarto-webr
+        run: quarto add --trust coatless/quarto-webr
 
       - name: Render Quarto Project
         run: quarto render index.qmd
