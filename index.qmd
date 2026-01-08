@@ -435,6 +435,14 @@ calcular_certeza_equivalente <- function(utilities, gamma = coef_aversion_riesgo
   }
 }
 
+```
+
+## Ejecutar Simulación
+Presione el botón para iniciar el modelo de Monte Carlo.
+
+```{webr-r}
+# AQUÍ VA TU SECCIÓN 12 (El loop de ejecución y los comandos print)
+
 # ============================================================================
 # FUNCIÓN PRINCIPAL: SIMULAR ESCENARIO DE COMPRA
 # ============================================================================
@@ -1370,17 +1378,6 @@ cat("constituye asesoramiento financiero. Consulte con un profesional.\n")
 cat("═══════════════════════════════════════════════════════════════════════\n")
 # ============================================================================
 
-```
-
-## Ejecutar Simulación
-Presione el botón para iniciar el modelo de Monte Carlo.
-
-```{webr-r}
-# AQUÍ VA TU SECCIÓN 12 (El loop de ejecución y los comandos print)
-
-# Ejemplo:
-# Sigma <- crear_matriz_correlacion()
-# ... (Tu loop de simulación) ...
 
 print(p1)
 print(p2)
