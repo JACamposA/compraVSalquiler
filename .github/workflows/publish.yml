@@ -18,7 +18,7 @@ jobs:
           version: pre-release
 
       - name: Install WebR Extension
-        run: quarto add --no-ask coatless/quarto-webr
+        run: echo "y" | quarto add coatless/quarto-webr
         
       - name: Render Quarto Project
         run: quarto render index.qmd
