@@ -787,9 +787,6 @@ for (tipo in c("Compra", "Alquiler")) {
 ---
 
 ## 📊 Gráficos
-# ==========================================
-# GRÁFICO 1: Evolución del Patrimonio
-# ==========================================
 
 ### Evolución del Patrimonio
 
@@ -798,8 +795,6 @@ for (tipo in c("Compra", "Alquiler")) {
 #| edit: false
 
 p <- params_global
-cat("\n--- GRÁFICO 1: Evolución del Patrimonio ---\n\n")
-
 patrimonio_por_año <- resultados %>%
   group_by(año, tipo) %>%
   summarise(
@@ -854,14 +849,10 @@ print(
 )
 
 p <- params_global
-# ==========================================
-# GRÁFICO 2: Distribución Final
-# ==========================================
 
 resultados_final <- resultados %>%
   filter(año == p$plazo_anos) %>%
   mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-cat("\n--- GRÁFICO 2: Distribución del Resultado Final ---\n\n")
 
 stats_media <- resultados_final %>% 
   group_by(tipo_clean) %>% 
@@ -888,32 +879,12 @@ ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
 ```{webr-r}
 #| label: grafico-diferencia
 #| edit: false
-print(
-  ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
-    geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
-    geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean),
-               linetype = "dashed", linewidth = 1) +
-    scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-    scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-    labs(
-      title = sprintf("Distribución del Patrimonio Final (%d años)", params$plazo_anos),
-      subtitle = "Líneas punteadas = promedio de cada estrategia",
-      x = "Patrimonio Final (miles USD)", y = "Frecuencia",
-      fill = "Estrategia", color = "Promedio"
-    ) +
-    theme_minimal(base_size = 13) +
-    theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
-)
 
 p <- params_global
-# ==========================================
-# GRÁFICO 3: Diferencia Compra - Alquiler
-# ==========================================
 
 resultados_final <- resultados %>%
   filter(año == p$plazo_anos) %>%
   mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-cat("\n--- GRÁFICO 3: Diferencia Compra vs Alquiler ---\n\n")
 
 diferencias <- resultados_final %>%
   dplyr::select(simulacion, tipo_clean, patrimonio) %>%
@@ -938,23 +909,6 @@ ggplot(diferencias, aes(x = diferencia / 1000)) +
   ) +
   theme_minimal(base_size = 13) +
   theme(plot.title = element_text(face = "bold"))
-print(
-  ggplot(diferencias, aes(x = diferencia / 1000)) +
-    geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
-    geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
-    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
-    annotate("label", x = media_dif / 1000, y = Inf, vjust = 1.5,
-             label = sprintf("Promedio: $%.0fK", media_dif / 1000),
-             fill = "white", color = "blue", size = 4) +
-    labs(
-      title = "Diferencia de Patrimonio: Compra - Alquiler",
-      subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", 
-                         pct_compra_mejor, 100-pct_compra_mejor),
-      x = "Diferencia (miles USD)", y = "Frecuencia"
-    ) +
-    theme_minimal(base_size = 13) +
-    theme(plot.title = element_text(face = "bold"))
-)
 
 cat("\n✅ Análisis completado\n")
 ```
