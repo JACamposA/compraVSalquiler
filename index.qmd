@@ -27,8 +27,8 @@ select <- dplyr::select
 filter <- dplyr::filter
 
 crear_matriz_correlacion <- function(cor_inflacion_tc, cor_salario_inflacion, 
-                                      cor_inmobiliario_bolsa, cor_alquiler_inflacion,
-                                      cor_inmobiliario_inflacion) {
+                                     cor_inmobiliario_bolsa, cor_alquiler_inflacion,
+                                     cor_inmobiliario_inflacion) {
   n_vars <- 6
   Sigma <- diag(n_vars)
   Sigma[1, 2] <- Sigma[2, 1] <- cor_inflacion_tc
@@ -51,7 +51,7 @@ generar_shocks_correlacionados <- function(n_periodos, Sigma) {
 }
 
 simular_regimen_crisis <- function(n_meses, prob_crisis_anual, 
-                                    duracion_crisis_meses_media, duracion_crisis_meses_sd) {
+                                   duracion_crisis_meses_media, duracion_crisis_meses_sd) {
   en_crisis <- rep(FALSE, n_meses)
   meses_restantes_crisis <- 0
   
@@ -72,11 +72,11 @@ simular_regimen_crisis <- function(n_meses, prob_crisis_anual,
 }
 
 generar_eventos_vida <- function(n_anos, prob_perdida_empleo_anual, duracion_desempleo_meses_media,
-                                  duracion_desempleo_meses_sd, prob_aumento_significativo_anual,
-                                  prob_cambio_carrera, prob_reparacion_mayor_anual,
-                                  prob_problema_legal_propiedad, prob_no_renovacion_contrato,
-                                  prob_cambio_necesidad_espacio, duracion_contrato_anos,
-                                  magnitud_aumento_significativo, caida_temporal_cambio_carrera) {
+                                 duracion_desempleo_meses_sd, prob_aumento_significativo_anual,
+                                 prob_cambio_carrera, prob_reparacion_mayor_anual,
+                                 prob_problema_legal_propiedad, prob_no_renovacion_contrato,
+                                 prob_cambio_necesidad_espacio, duracion_contrato_anos,
+                                 magnitud_aumento_significativo, caida_temporal_cambio_carrera) {
   eventos <- list(
     perdida_empleo = rep(FALSE, n_anos),
     meses_desempleo = rep(0, n_anos),
