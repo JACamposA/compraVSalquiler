@@ -1,9 +1,30 @@
 [
   {
+    "objectID": "index.html#complete-sus-datos",
+    "href": "index.html#complete-sus-datos",
+    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
+    "section": "📝 Complete sus Datos",
+    "text": "📝 Complete sus Datos\nModifique los valores en cada sección según su situación personal. Luego presione “Run Code” en cada celda.\n\n💰 Situación Personal\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🏠 Propiedad y Crédito UVA\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🔑 Alquiler Actual\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📊 Parámetros de Mercado (Opcional)\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
+  },
+  {
     "objectID": "index.html#ejecutar-simulación",
     "href": "index.html#ejecutar-simulación",
-    "title": "Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "Ejecutar Simulación",
-    "text": "Ejecutar Simulación\nPresione el botón para iniciar el modelo de Monte Carlo.\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
+    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
+    "section": "▶️ Ejecutar Simulación",
+    "text": "▶️ Ejecutar Simulación\nUna vez completados sus datos, presione “Run Code” aquí para ejecutar el análisis.\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
+  },
+  {
+    "objectID": "index.html#resultados",
+    "href": "index.html#resultados",
+    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
+    "section": "📈 Resultados",
+    "text": "📈 Resultados\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n📊 Distribución de Patrimonio Final\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📈 Evolución del Patrimonio\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📉 Diferencia Compra vs Alquiler\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
+  },
+  {
+    "objectID": "index.html#ℹ-acerca-del-modelo",
+    "href": "index.html#ℹ-acerca-del-modelo",
+    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
+    "section": "ℹ️ Acerca del Modelo",
+    "text": "ℹ️ Acerca del Modelo\n\n\n\n\n\n\nNote¿Qué incluye esta simulación? (click para expandir)\n\n\n\n\n\nCrédito UVA:\n\nCuota fija en UVAs que ajusta por inflación argentina\nTasa real del 6% anual (configurable)\n\nEscenarios de Crisis Argentina:\n\n8% probabilidad anual de crisis macroeconómica\nDevaluación, caída de salarios reales, caída inmobiliaria\nDuración promedio de 18 meses\n\nEventos de Vida:\n\nPérdida de empleo (5% anual, 4 meses promedio)\nPromociones y aumentos significativos\nReparaciones mayores de la propiedad\nNo renovación de contrato de alquiler\n\nInversiones:\n\nQuien alquila invierte la diferencia en bolsa (S&P 500)\nRendimiento esperado 7% anual, volatilidad 15%\nIncluye comportamiento de pánico en caídas de mercado\n\nImpuestos:\n\nITI (Impuesto a la Transferencia de Inmuebles)\nBienes Personales\nGanancias de capital (inmuebles e inversiones)\n\n\n\n\n\n\n\n\n\n\nWarning⚠️ Disclaimer\n\n\n\nEste análisis es una herramienta de apoyo a la decisión y no constituye asesoramiento financiero, legal o impositivo. Los resultados se basan en simulaciones con supuestos sobre el futuro que pueden no cumplirse.\nConsulte con un profesional antes de tomar decisiones importantes sobre vivienda."
   }
 ]
