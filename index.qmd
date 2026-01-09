@@ -489,7 +489,7 @@ tasa_ahorro_pct <- 0.50
 # Porcentaje del salario que destina a vivienda + ahorro (ej: 0.30 = 30%)
 # Este monto cubre: cuota/alquiler + ahorro adicional que pueda invertir
 
-#  Propiedad a Comprar
+#Propiedad a Comprar
 
 valor_propiedad_usd <- 120000
 # Precio de la propiedad que está considerando comprar
@@ -503,7 +503,7 @@ plazo_anos <- 20
 tasa_real_uva_anual <- 0.05
 # Tasa de interés REAL del crédito UVA (sobre inflación). Ej: 0.05 = 5%
 
-#  Alquiler Actual
+#Alquiler Actual
 
 alquiler_mensual_inicial_usd <- 437
 # Lo que paga (o pagaría) de alquiler mensual en USD
@@ -514,14 +514,14 @@ deposito_alquiler_meses <- 3
 comision_inmobiliaria_alquiler <- 1
 # Meses de comisión de la inmobiliaria al firmar (típico: 1)
 
-#  Ubicación
+#Ubicación
 
 ubicacion <- "GBA"
 # Opciones: "CABA" o "GBA"
 # CABA: Mayor apreciación histórica (3% anual)
 # GBA: Menor apreciación histórica (1% anual)
 
-#  Expectativas de Mercado (Opcional)
+#Expectativas de Mercado (Opcional)
 
 crecimiento_salario_anual_usd <- 0.08
 # Crecimiento real esperado de su salario en USD por año (ej: 0.03 = 3%)
