@@ -1,3 +1,4 @@
+
 ---
 title: "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler"
 subtitle: "Análisis Monte Carlo para decisiones de vivienda"
@@ -12,6 +13,28 @@ webr:
   packages: ['MASS', 'ggplot2', 'dplyr', 'tidyr', 'scales', 'Matrix']
   autoload-packages: true
 ---
+
+```{=html}
+<style>
+/* Ocultar editor de código en bloques de ejecución y gráficos */
+#ejecutar-todo .webr-monaco-editor-container,
+#ejecutar-todo .monaco-editor,
+#ejecutar-todo .webr-code-editor,
+#grafico-evolucion .webr-monaco-editor-container,
+#grafico-evolucion .monaco-editor,
+#grafico-evolucion .webr-code-editor,
+#grafico-distribucion .webr-monaco-editor-container,
+#grafico-distribucion .monaco-editor,
+#grafico-distribucion .webr-code-editor,
+#grafico-diferencia .webr-monaco-editor-container,
+#grafico-diferencia .monaco-editor,
+#grafico-diferencia .webr-code-editor {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+</style>
+```
 
 ```{webr-r}
 #| context: setup
@@ -485,7 +508,7 @@ Modifique los valores según su situación personal. Luego presione **"Run Code"
 ahorros_actuales_usd <- 50000
 # Todos sus ahorros disponibles en USD (efectivo, plazo fijo, etc.)
 
-salario_mensual_inicial_usd <- 2333
+salario_mensual_inicial_usd <- 2000
 # Su ingreso mensual neto en USD (después de impuestos)
 
 tasa_ahorro_pct <- 0.30
@@ -508,7 +531,7 @@ enganche_pct <- 0.25
 plazo_anos <- 20
 # Plazo del crédito hipotecario en años (típico: 15-30)
 
-tasa_real_uva_anual <- 0.05
+tasa_real_uva_anual <- 0.06
 # Tasa de interés REAL del crédito UVA (sobre inflación). Ej: 0.05 = 5%
 ```
 
@@ -564,8 +587,7 @@ Una vez completados sus datos arriba, presione **"Run Code"** para ejecutar la s
 
 ```{webr-r}
 #| label: ejecutar-todo
-#| echo: false
-#| code-fold: true
+#| edit: false
 
 # Validación
 if (!exists("ahorros_actuales_usd") || !exists("salario_mensual_inicial_usd") || 
@@ -769,8 +791,7 @@ for (tipo in c("Compra", "Alquiler")) {
 
 ```{webr-r}
 #| label: grafico-evolucion
-#| echo: false
-#| code-fold: true
+#| edit: false
 
 p <- params_global
 
@@ -808,8 +829,7 @@ ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)
 
 ```{webr-r}
 #| label: grafico-distribucion
-#| echo: false
-#| code-fold: true
+#| edit: false
 
 p <- params_global
 
@@ -841,8 +861,7 @@ ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
 
 ```{webr-r}
 #| label: grafico-diferencia
-#| echo: false
-#| code-fold: true
+#| edit: false
 
 p <- params_global
 
