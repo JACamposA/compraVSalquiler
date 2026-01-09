@@ -565,6 +565,7 @@ Una vez completados sus datos arriba, presione **"Run Code"** para ejecutar la s
 ```{webr-r}
 #| label: ejecutar-todo
 #| echo: false
+#| code-fold: true
 
 # Validación
 if (!exists("ahorros_actuales_usd") || !exists("salario_mensual_inicial_usd") || 
@@ -769,6 +770,7 @@ for (tipo in c("Compra", "Alquiler")) {
 ```{webr-r}
 #| label: grafico-evolucion
 #| echo: false
+#| code-fold: true
 
 p <- params_global
 
@@ -807,6 +809,7 @@ ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)
 ```{webr-r}
 #| label: grafico-distribucion
 #| echo: false
+#| code-fold: true
 
 p <- params_global
 
@@ -839,6 +842,7 @@ ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
 ```{webr-r}
 #| label: grafico-diferencia
 #| echo: false
+#| code-fold: true
 
 p <- params_global
 
