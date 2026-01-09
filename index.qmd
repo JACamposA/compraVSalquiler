@@ -541,10 +541,6 @@ Una vez completados sus datos arriba, presione **"Run Code"** para ejecutar la s
 
 ```{webr-r}
 #| label: ejecutar-todo
-#| edit: false
-#| output: true
-#| echo: false
-#| context: interactive
 
 # Validación
 if (!exists("ahorros_actuales_usd") || !exists("salario_mensual_inicial_usd") || 
