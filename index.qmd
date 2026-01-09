@@ -213,7 +213,7 @@ perdida_por_venta_panico <- 0.10       # Pérdida adicional por vender en mal mo
 # 12. CONFIGURACIÓN DE SIMULACIÓN
 # ────────────────────────────────────────────────────────────────────────────
 
-n_simulaciones <- 1000                 # Número de simulaciones Monte Carlo
+n_simulaciones <- 200                 # Número de simulaciones Monte Carlo
 semilla_aleatoria <- 42                # Semilla para reproducibilidad
 mostrar_progreso <- TRUE               # Mostrar barra de progreso
 
