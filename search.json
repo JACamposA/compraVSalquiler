@@ -4,14 +4,7 @@
     "href": "index.html#complete-sus-datos",
     "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
     "section": "📝 Complete sus Datos",
-    "text": "📝 Complete sus Datos\nModifique los valores según su situación personal. Luego presione “Run Code” en cada sección.\n\n\n💰 Situación Financiera\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🏠 Propiedad a Comprar\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🔑 Alquiler Actual\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📍 Ubicación\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📊 Expectativas de Mercado (Opcional)\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
-  },
-  {
-    "objectID": "index.html#ejecutar-análisis",
-    "href": "index.html#ejecutar-análisis",
-    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "▶️ Ejecutar Análisis",
-    "text": "▶️ Ejecutar Análisis\nUna vez completados sus datos arriba, presione “Run Code” para ejecutar la simulación.\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
+    "text": "📝 Complete sus Datos\nModifique los valores según su situación personal. Luego presione “Run Code” en cada sección.\n\n#| label: inputs-personal #| autorun: true\nahorros_actuales_usd &lt;- 32000 # Todos sus ahorros disponibles en USD (efectivo, plazo fijo, etc.)\nsalario_mensual_inicial_usd &lt;- 2333 # Su ingreso mensual neto en USD (después de impuestos)\ntasa_ahorro_pct &lt;- 0.50 # Porcentaje del salario que destina a vivienda + ahorro (ej: 0.30 = 30%) # Este monto cubre: cuota/alquiler + ahorro adicional que pueda invertir"
   },
   {
     "objectID": "index.html#ℹ-acerca-del-modelo",
