@@ -13,6 +13,28 @@ webr:
   autoload-packages: true
 ---
 
+```{=html}
+<style>
+/* Ocultar editor de código en bloques de ejecución y gráficos */
+#ejecutar-todo .webr-monaco-editor-container,
+#ejecutar-todo .monaco-editor,
+#ejecutar-todo .webr-code-editor,
+#grafico-evolucion .webr-monaco-editor-container,
+#grafico-evolucion .monaco-editor,
+#grafico-evolucion .webr-code-editor,
+#grafico-distribucion .webr-monaco-editor-container,
+#grafico-distribucion .monaco-editor,
+#grafico-distribucion .webr-code-editor,
+#grafico-diferencia .webr-monaco-editor-container,
+#grafico-diferencia .monaco-editor,
+#grafico-diferencia .webr-code-editor {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+</style>
+```
+
 ```{webr-r}
 #| context: setup
 
@@ -27,8 +49,8 @@ select <- dplyr::select
 filter <- dplyr::filter
 
 crear_matriz_correlacion <- function(cor_inflacion_tc, cor_salario_inflacion, 
-                                     cor_inmobiliario_bolsa, cor_alquiler_inflacion,
-                                     cor_inmobiliario_inflacion) {
+                                      cor_inmobiliario_bolsa, cor_alquiler_inflacion,
+                                      cor_inmobiliario_inflacion) {
   n_vars <- 6
   Sigma <- diag(n_vars)
   Sigma[1, 2] <- Sigma[2, 1] <- cor_inflacion_tc
@@ -51,7 +73,7 @@ generar_shocks_correlacionados <- function(n_periodos, Sigma) {
 }
 
 simular_regimen_crisis <- function(n_meses, prob_crisis_anual, 
-                                   duracion_crisis_meses_media, duracion_crisis_meses_sd) {
+                                    duracion_crisis_meses_media, duracion_crisis_meses_sd) {
   en_crisis <- rep(FALSE, n_meses)
   meses_restantes_crisis <- 0
   
@@ -72,11 +94,11 @@ simular_regimen_crisis <- function(n_meses, prob_crisis_anual,
 }
 
 generar_eventos_vida <- function(n_anos, prob_perdida_empleo_anual, duracion_desempleo_meses_media,
-                                 duracion_desempleo_meses_sd, prob_aumento_significativo_anual,
-                                 prob_cambio_carrera, prob_reparacion_mayor_anual,
-                                 prob_problema_legal_propiedad, prob_no_renovacion_contrato,
-                                 prob_cambio_necesidad_espacio, duracion_contrato_anos,
-                                 magnitud_aumento_significativo, caida_temporal_cambio_carrera) {
+                                  duracion_desempleo_meses_sd, prob_aumento_significativo_anual,
+                                  prob_cambio_carrera, prob_reparacion_mayor_anual,
+                                  prob_problema_legal_propiedad, prob_no_renovacion_contrato,
+                                  prob_cambio_necesidad_espacio, duracion_contrato_anos,
+                                  magnitud_aumento_significativo, caida_temporal_cambio_carrera) {
   eventos <- list(
     perdida_empleo = rep(FALSE, n_anos),
     meses_desempleo = rep(0, n_anos),
@@ -475,11 +497,14 @@ message("Simulador cargado correctamente")
 Modifique los valores según su situación personal. Luego presione **"Run Code"** en cada sección.
 
 ---
+
+### 💰 Situación Financiera
+
 ```{webr-r}
 #| label: inputs-personal
 #| autorun: true
 
-ahorros_actuales_usd <- 32000
+ahorros_actuales_usd <- 30000
 # Todos sus ahorros disponibles en USD (efectivo, plazo fijo, etc.)
 
 salario_mensual_inicial_usd <- 2333
@@ -488,8 +513,13 @@ salario_mensual_inicial_usd <- 2333
 tasa_ahorro_pct <- 0.50
 # Porcentaje del salario que destina a vivienda + ahorro (ej: 0.30 = 30%)
 # Este monto cubre: cuota/alquiler + ahorro adicional que pueda invertir
+```
 
-#Propiedad a Comprar
+### 🏠 Propiedad a Comprar
+
+```{webr-r}
+#| label: inputs-propiedad
+#| autorun: true
 
 valor_propiedad_usd <- 120000
 # Precio de la propiedad que está considerando comprar
@@ -497,31 +527,46 @@ valor_propiedad_usd <- 120000
 enganche_pct <- 0.25
 # Porcentaje del valor que pagaría de entrada (ej: 0.25 = 25%)
 
-plazo_anos <- 20
+plazo_anos <- 25
 # Plazo del crédito hipotecario en años (típico: 15-30)
 
-tasa_real_uva_anual <- 0.05
+tasa_real_uva_anual <- 0.06
 # Tasa de interés REAL del crédito UVA (sobre inflación). Ej: 0.05 = 5%
+```
 
-#Alquiler Actual
+### 🔑 Alquiler Actual
+
+```{webr-r}
+#| label: inputs-alquiler
+#| autorun: true
 
 alquiler_mensual_inicial_usd <- 437
 # Lo que paga (o pagaría) de alquiler mensual en USD
 
 deposito_alquiler_meses <- 3
-# Meses de alquiler que gastaría en mudarse (típico: 1-3)
+# Meses de depósito que pide el propietario (típico: 1-3)
 
 comision_inmobiliaria_alquiler <- 1
 # Meses de comisión de la inmobiliaria al firmar (típico: 1)
+```
 
-#Ubicación
+### 📍 Ubicación
 
-ubicacion <- "GBA"
+```{webr-r}
+#| label: inputs-ubicacion
+#| autorun: true
+
+ubicacion <- "CABA"
 # Opciones: "CABA" o "GBA"
 # CABA: Mayor apreciación histórica (3% anual)
 # GBA: Menor apreciación histórica (1% anual)
+```
 
-#Expectativas de Mercado (Opcional)
+### 📊 Expectativas de Mercado (Opcional)
+
+```{webr-r}
+#| label: inputs-mercado
+#| autorun: true
 
 crecimiento_salario_anual_usd <- 0.08
 # Crecimiento real esperado de su salario en USD por año (ej: 0.03 = 3%)
@@ -541,6 +586,7 @@ Una vez completados sus datos arriba, presione **"Run Code"** para ejecutar la s
 
 ```{webr-r}
 #| label: ejecutar-todo
+#| edit: false
 
 # Validación
 if (!exists("ahorros_actuales_usd") || !exists("salario_mensual_inicial_usd") || 
@@ -666,6 +712,9 @@ if (ahorros_actuales_usd < costo_total_compra) {
 cat("Ejecutando simulación Monte Carlo...\n")
 cat(sprintf("Procesando %d escenarios para %d años...\n\n", n_simulaciones, plazo_anos))
 
+# Ejecutar
+resultados <<- ejecutar_simulacion_completa(params)
+params_global <<- params
 # Ejecutar simulación
 resultados <- ejecutar_simulacion_completa(params)
 
@@ -733,11 +782,22 @@ for (tipo in c("Compra", "Alquiler")) {
               format(round(s$q90), big.mark=",")))
   cat(sprintf("   Peor escenario (5%%): $%s USD\n\n", format(round(s$peor_5pct), big.mark=",")))
 }
+```
 
+---
+
+## 📊 Gráficos
 # ==========================================
 # GRÁFICO 1: Evolución del Patrimonio
 # ==========================================
 
+### Evolución del Patrimonio
+
+```{webr-r}
+#| label: grafico-evolucion
+#| edit: false
+
+p <- params_global
 cat("\n--- GRÁFICO 1: Evolución del Patrimonio ---\n\n")
 
 patrimonio_por_año <- resultados %>%
@@ -753,6 +813,28 @@ patrimonio_por_año <- resultados %>%
   ) %>%
   mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
 
+ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
+  geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
+  geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
+  geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
+  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_y_continuous(labels = label_dollar(scale = 1, suffix = "K")) +
+  labs(
+    title = "Evolución del Patrimonio",
+    subtitle = "Línea: mediana | Banda oscura: 50% de casos | Banda clara: 80% de casos",
+    x = "Años", y = "Patrimonio (miles USD)",
+    color = "Estrategia", fill = "Estrategia"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+```
+
+### Distribución del Resultado Final
+
+```{webr-r}
+#| label: grafico-distribucion
+#| edit: false
 print(
   ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
     geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
@@ -771,16 +853,41 @@ print(
     theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
 )
 
+p <- params_global
 # ==========================================
 # GRÁFICO 2: Distribución Final
 # ==========================================
 
+resultados_final <- resultados %>%
+  filter(año == p$plazo_anos) %>%
+  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
 cat("\n--- GRÁFICO 2: Distribución del Resultado Final ---\n\n")
 
 stats_media <- resultados_final %>% 
   group_by(tipo_clean) %>% 
   summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
 
+ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
+  geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
+  geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean),
+             linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  labs(
+    title = sprintf("Distribución del Patrimonio Final (%d años)", p$plazo_anos),
+    subtitle = "Líneas punteadas = promedio de cada estrategia",
+    x = "Patrimonio Final (miles USD)", y = "Frecuencia",
+    fill = "Estrategia", color = "Promedio"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+```
+
+### Diferencia Compra - Alquiler
+
+```{webr-r}
+#| label: grafico-diferencia
+#| edit: false
 print(
   ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
     geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
@@ -798,10 +905,14 @@ print(
     theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
 )
 
+p <- params_global
 # ==========================================
 # GRÁFICO 3: Diferencia Compra - Alquiler
 # ==========================================
 
+resultados_final <- resultados %>%
+  filter(año == p$plazo_anos) %>%
+  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
 cat("\n--- GRÁFICO 3: Diferencia Compra vs Alquiler ---\n\n")
 
 diferencias <- resultados_final %>%
@@ -812,6 +923,21 @@ diferencias <- resultados_final %>%
 media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
 pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
 
+ggplot(diferencias, aes(x = diferencia / 1000)) +
+  geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
+  geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
+  geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
+  annotate("label", x = media_dif / 1000, y = Inf, vjust = 1.5,
+           label = sprintf("Promedio: $%.0fK", media_dif / 1000),
+           fill = "white", color = "blue", size = 4) +
+  labs(
+    title = "Diferencia de Patrimonio: Compra - Alquiler",
+    subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", 
+                       pct_compra_mejor, 100-pct_compra_mejor),
+    x = "Diferencia (miles USD)", y = "Frecuencia"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold"))
 print(
   ggplot(diferencias, aes(x = diferencia / 1000)) +
     geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
