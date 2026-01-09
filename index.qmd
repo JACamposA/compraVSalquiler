@@ -464,15 +464,12 @@ Modifique los valores en cada sección según su situación personal. Luego pres
 #                        MODIFIQUE ESTOS VALORES
 # ══════════
 
-salario_mensual_inicial_usd <- 2333    # 👈 Su salario mensual en dólares
-tasa_ahorro_pct <- 0.50                # 👈 % que puede ahorrar (0.50 = 50%)
+salario_mensual_inicial_usd <- 1000    # 👈 Su salario mensual en dólares
+tasa_ahorro_pct <- 0.50                # 👈 % que puede ahorrar sin contar vivienda (0.50 = 50%)
 gastos_fijos_mensuales_usd <- 1151     # 👈 Gastos fijos (sin vivienda)
 
 # ══════════
-cat(sprintf("✅ Salario: $%s USD/mes\n", format(salario_mensual_inicial_usd, big.mark=",")))
-cat(sprintf("✅ Capacidad de ahorro: $%s USD/mes (%s%%)\n", 
-            format(salario_mensual_inicial_usd * tasa_ahorro_pct, big.mark=","),
-            tasa_ahorro_pct * 100))
+
 ```
 
 ### 🏠 Propiedad y Crédito UVA
@@ -486,17 +483,13 @@ cat(sprintf("✅ Capacidad de ahorro: $%s USD/mes (%s%%)\n",
 # ══════════
 
 valor_propiedad_usd <- 120000          # 👈 Valor de la propiedad en USD
-enganche_pct <- 0.20                   # 👈 Enganche (0.20 = 20%)
+enganche_pct <- 0.20                   # 👈 Pago inicial (0.20 = 20%)
 plazo_anos <- 25                       # 👈 Plazo del crédito en años
 tasa_real_uva_anual <- 0.06            # 👈 Tasa UVA anual (0.06 = 6%)
 
 # ══════════
-enganche_usd <- valor_propiedad_usd * enganche_pct
-credito_usd <- valor_propiedad_usd - enganche_usd
-cat(sprintf("✅ Propiedad: $%s USD\n", format(valor_propiedad_usd, big.mark=",")))
-cat(sprintf("✅ Enganche: $%s USD (%s%%)\n", format(enganche_usd, big.mark=","), enganche_pct*100))
-cat(sprintf("✅ Crédito: $%s USD a %d años (Tasa UVA: %s%%)\n", 
-            format(credito_usd, big.mark=","), plazo_anos, tasa_real_uva_anual*100))
+
+
 ```
 
 ### 🔑 Alquiler Actual
@@ -510,13 +503,11 @@ cat(sprintf("✅ Crédito: $%s USD a %d años (Tasa UVA: %s%%)\n",
 # ══════════
 
 alquiler_mensual_inicial_usd <- 437    # 👈 Alquiler mensual en USD
-deposito_alquiler_meses <- 3           # 👈 Meses de depósito requeridos
-comision_inmobiliaria_alquiler <- 1    # 👈 Meses de comisión al entrar
+deposito_alquiler_meses <- 3           # 👈 Valor de mudanza en meses de alquiler
+comision_inmobiliaria_alquiler <- 1    # 👈 Meses de comisión al entrar a un nuevo departamento
 
 # ══════════
-cat(sprintf("✅ Alquiler: $%s USD/mes\n", format(alquiler_mensual_inicial_usd, big.mark=",")))
-cat(sprintf("✅ Costo entrada: $%s USD (depósito + comisión)\n", 
-            format(alquiler_mensual_inicial_usd * (deposito_alquiler_meses + comision_inmobiliaria_alquiler), big.mark=",")))
+
 ```
 
 ### 📊 Parámetros de Mercado (Opcional)
@@ -530,15 +521,12 @@ cat(sprintf("✅ Costo entrada: $%s USD (depósito + comisión)\n",
 # ══════════
 
 crecimiento_salario_anual_usd <- 0.08  # Crecimiento salarial anual en USD
-apreciacion_propiedad_anual_usd <- 0.02  # Apreciación inmuebles
+apreciacion_propiedad_anual_usd <- 0.02  # Apreciación inmuebles (Con inflación del dólar)
 rendimiento_bolsa_base <- 0.07         # Rendimiento esperado S&P 500
 n_simulaciones <- 200                  # Número de simulaciones (100-500)
 
 # ══════════
-cat(sprintf("✅ Crecimiento salarial: %s%% anual\n", crecimiento_salario_anual_usd*100))
-cat(sprintf("✅ Apreciación inmuebles: %s%% anual\n", apreciacion_propiedad_anual_usd*100))
-cat(sprintf("✅ Rendimiento bolsa: %s%% anual\n", rendimiento_bolsa_base*100))
-cat(sprintf("✅ Simulaciones: %d\n", n_simulaciones))
+
 ```
 
 ---
@@ -548,6 +536,9 @@ cat(sprintf("✅ Simulaciones: %d\n", n_simulaciones))
 Una vez completados sus datos, presione **"Run Code"** aquí para ejecutar el análisis.
 
 ```{webr-r}
+enganche_usd <- valor_propiedad_usd * enganche_pct
+credito_usd <- valor_propiedad_usd - enganche_usd
+
 #| label: ejecutar-simulacion
 
 # ══════════
