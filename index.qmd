@@ -12,6 +12,11 @@ webr:
   packages: ['MASS', 'ggplot2', 'dplyr', 'tidyr', 'scales', 'Matrix']
   autoload-packages: true
 ---
+<style>
+.quarto-container {
+    max-width: 85% !important; /* Adjust percentage as needed */
+}
+</style>
 
 ```{webr-r}
 #| context: setup
@@ -580,22 +585,22 @@ Edite los valores y luego presione **Run Code**:
 
 ahorros_actuales_usd       <- 30000    # Total ahorros en USD
 salario_mensual_usd        <- 2333     # Ingreso mensual neto en USD
-tasa_ahorro_pct            <- 0.50     # % del salario para vivienda+ahorro
+tasa_ahorro_pct            <- 0.50     # % del salario disponible para para vivienda+ahorro
 
 valor_propiedad_usd        <- 120000   # Precio de la propiedad
-enganche_pct               <- 0.25     # Porcentaje de entrada (0.25 = 25%)
+enganche_pct               <- 0.20     # Porcentaje de entrada al crédito UVA (0.25 = 25%)
 plazo_anos                 <- 25       # Plazo del credito en anos
 tasa_real_uva_anual        <- 0.06     # Tasa real del credito UVA
 
-alquiler_mensual_usd       <- 437      # Alquiler mensual en USD
-deposito_meses             <- 3        # Meses de deposito
+alquiler_mensual_usd       <- 437      # Alquiler mensual actual en USD
+deposito_meses             <- 3        # Meses de costo de mudanza
 comision_meses             <- 1        # Meses de comision
 
-ubicacion                  <- "CABA"   # "CABA" o "GBA"
+ubicacion                  <- "GBA"   # "CABA" o "GBA"
 crecimiento_salario_anual  <- 0.08     # Crecimiento real del salario
 rendimiento_inversiones    <- 0.07     # Rendimiento esperado inversiones
 
-n_simulaciones             <- 1000     # Cantidad de escenarios
+n_simulaciones             <- 250     # Cantidad de escenarios (1 - 1000, más da mayor precisión pero tarda más)
 
 # ============================================================
 #                    EJECUTAR
