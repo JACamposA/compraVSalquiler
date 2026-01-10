@@ -770,338 +770,78 @@ g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
   theme(plot.title = element_text(face = "bold", size = 16))
 
 # ══════════════════════════════════════════════════════════════
-#                    GUARDAR GRÁFICOS COMO PNG
+#                    MOSTRAR RESULTADOS
 # ══════════════════════════════════════════════════════════════
 
-ggsave("/tmp/plot1.png", g1, width = 10, height = 6, dpi = 100, bg = "white")
-ggsave("/tmp/plot2.png", g2, width = 10, height = 6, dpi = 100, bg = "white")
-ggsave("/tmp/plot3.png", g3, width = 10, height = 6, dpi = 100, bg = "white")
-
-# Helper function for base64 encoding (native R, no external package needed)
-encode_base64 <- function(file_path) {
-  raw_data <- readBin(file_path, "raw", file.info(file_path)$size)
-  base64_chars <- c(LETTERS, letters, 0:9, "+", "/")
-  
-  # Convert raw bytes to bits, then to base64
-  bits <- as.integer(rawToBits(raw_data))
-  # Reshape to groups of 6 bits
-  n_bits <- length(bits)
-  # Pad to multiple of 6
-  padding_needed <- (6 - (n_bits %% 6)) %% 6
-  bits <- c(bits, rep(0L, padding_needed))
-  
-  # This is complex - use a simpler approach with jsonlite or just openssl
-  # Actually, let's use the built-in base64 from newer R
-  if (getRversion() >= "4.0.0") {
-    return(gsub("\n", "", base64enc::base64encode(file_path)))
-  }
-  
-  # Fallback: read and encode manually using xfun if available
-  paste0(as.character(openssl::base64_encode(raw_data)), collapse = "")
-}
-
-# Use simpler approach - just read binary and encode
-img1_raw <- readBin("/tmp/plot1.png", "raw", file.info("/tmp/plot1.png")$size)
-img2_raw <- readBin("/tmp/plot2.png", "raw", file.info("/tmp/plot2.png")$size)
-img3_raw <- readBin("/tmp/plot3.png", "raw", file.info("/tmp/plot3.png")$size)
-
-# WebR should have base64 encoding available via jsonlite or we build our own
-to_base64 <- function(raw_vec) {
-  b64_chars <- c(LETTERS, letters, as.character(0:9), "+", "/")
-  result <- character(0)
-  i <- 1
-  while (i <= length(raw_vec)) {
-    chunk <- as.integer(raw_vec[i:min(i+2, length(raw_vec))])
-    while (length(chunk) < 3) chunk <- c(chunk, 0L)
-    
-    idx1 <- bitwShiftR(chunk[1], 2) + 1
-    idx2 <- bitwOr(bitwShiftL(bitwAnd(chunk[1], 3), 4), bitwShiftR(chunk[2], 4)) + 1
-    idx3 <- bitwOr(bitwShiftL(bitwAnd(chunk[2], 15), 2), bitwShiftR(chunk[3], 6)) + 1
-    idx4 <- bitwAnd(chunk[3], 63) + 1
-    
-    result <- c(result, b64_chars[idx1], b64_chars[idx2], b64_chars[idx3], b64_chars[idx4])
-    i <- i + 3
-  }
-  
-  # Handle padding
-  remainder <- length(raw_vec) %% 3
-  if (remainder == 1) {
-    result[(length(result)-1):length(result)] <- "="
-  } else if (remainder == 2) {
-    result[length(result)] <- "="
-  }
-  
-  paste0(result, collapse = "")
-}
-
-img1_b64 <- to_base64(img1_raw)
-img2_b64 <- to_base64(img2_raw)
-img3_b64 <- to_base64(img3_raw)
-
-# ══════════════════════════════════════════════════════════════
-#                    CONSTRUIR HTML DEL REPORTE
-# ══════════════════════════════════════════════════════════════
-
-# Determinar recomendación
-if (prob_compra_gana > 0.6) {
-  recomendacion <- sprintf('<div class="result-box compra"><h2>🏠 COMPRAR es la mejor opción</h2><p>Genera aproximadamente <strong>$%s USD más</strong> en promedio<br>Gana en <strong>%.0f%%</strong> de los escenarios simulados</p></div>',
-                           format(round(abs(diferencia_media)), big.mark=","), prob_compra_gana * 100)
-} else if (prob_compra_gana < 0.4) {
-  recomendacion <- sprintf('<div class="result-box alquiler"><h2>🔑 ALQUILAR es la mejor opción</h2><p>Genera aproximadamente <strong>$%s USD más</strong> en promedio<br>Gana en <strong>%.0f%%</strong> de los escenarios simulados</p></div>',
-                           format(round(abs(diferencia_media)), big.mark=","), (1-prob_compra_gana) * 100)
-} else {
-  recomendacion <- sprintf('<div class="result-box neutral"><h2>⚖️ Ambas opciones son similares</h2><p>Compra gana en <strong>%.0f%%</strong> de escenarios<br>Alquiler gana en <strong>%.0f%%</strong> de escenarios</p></div>',
-                           prob_compra_gana * 100, (1-prob_compra_gana) * 100)
-}
-
-# Stats para tabla
 s_compra <- stats_finales %>% filter(tipo_clean == "Compra")
 s_alquiler <- stats_finales %>% filter(tipo_clean == "Alquiler")
 
-html_content <- sprintf('
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resultados - Simulador Vivienda Argentina</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%%, #c3cfe2 100%%);
-      min-height: 100vh;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    .container { max-width: 1000px; margin: 0 auto; }
-    h1 { 
-      text-align: center; 
-      color: #2c3e50;
-      margin-bottom: 10px;
-      font-size: 2.2em;
-    }
-    .subtitle {
-      text-align: center;
-      color: #7f8c8d;
-      margin-bottom: 30px;
-      font-size: 1.1em;
-    }
-    .result-box {
-      padding: 25px;
-      border-radius: 16px;
-      margin-bottom: 30px;
-      text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    }
-    .result-box.compra { background: linear-gradient(135deg, #2E86C1 0%%, #1a5276 100%%); color: white; }
-    .result-box.alquiler { background: linear-gradient(135deg, #E67E22 0%%, #d35400 100%%); color: white; }
-    .result-box.neutral { background: linear-gradient(135deg, #27ae60 0%%, #1e8449 100%%); color: white; }
-    .result-box h2 { margin-bottom: 10px; font-size: 1.8em; }
-    .result-box p { font-size: 1.15em; opacity: 0.95; }
-    
-    .config-summary {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    .config-summary h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
-    .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    .config-item { background: #f8f9fa; padding: 12px; border-radius: 8px; }
-    .config-item .label { color: #7f8c8d; font-size: 0.85em; }
-    .config-item .value { color: #2c3e50; font-weight: 600; font-size: 1.1em; }
-    
-    .stats-table {
-      width: 100%%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      margin-bottom: 30px;
-    }
-    .stats-table th, .stats-table td { padding: 15px; text-align: center; }
-    .stats-table th { background: #34495e; color: white; font-weight: 600; }
-    .stats-table tr:nth-child(even) { background: #f8f9fa; }
-    .stats-table td:first-child { font-weight: 600; text-align: left; padding-left: 20px; }
-    
-    .chart-container {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    .chart-container img { width: 100%%; height: auto; border-radius: 8px; }
-    .chart-container h3 { color: #34495e; margin-bottom: 15px; }
-    
-    .disclaimer {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 20px;
-      font-size: 0.9em;
-      color: #856404;
-    }
-    
-    .footer {
-      text-align: center;
-      color: #95a5a6;
-      margin-top: 30px;
-      font-size: 0.85em;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🏠 Resultados del Análisis</h1>
-    <p class="subtitle">Simulación Monte Carlo: Compra vs Alquiler en Argentina</p>
-    
-    %s
-    
-    <div class="config-summary">
-      <h3>📋 Su Configuración</h3>
-      <div class="config-grid">
-        <div class="config-item">
-          <div class="label">Ahorros actuales</div>
-          <div class="value">$%s USD</div>
-        </div>
-        <div class="config-item">
-          <div class="label">Salario mensual</div>
-          <div class="value">$%s USD</div>
-        </div>
-        <div class="config-item">
-          <div class="label">Valor propiedad</div>
-          <div class="value">$%s USD</div>
-        </div>
-        <div class="config-item">
-          <div class="label">Crédito UVA</div>
-          <div class="value">$%s a %d años</div>
-        </div>
-        <div class="config-item">
-          <div class="label">Alquiler mensual</div>
-          <div class="value">$%s USD</div>
-        </div>
-        <div class="config-item">
-          <div class="label">Ubicación</div>
-          <div class="value">%s</div>
-        </div>
-      </div>
-    </div>
-    
-    <table class="stats-table">
-      <tr>
-        <th>Métrica</th>
-        <th>🏠 Compra</th>
-        <th>🔑 Alquiler</th>
-      </tr>
-      <tr>
-        <td>Patrimonio promedio</td>
-        <td>$%s USD</td>
-        <td>$%s USD</td>
-      </tr>
-      <tr>
-        <td>Patrimonio mediano</td>
-        <td>$%s USD</td>
-        <td>$%s USD</td>
-      </tr>
-      <tr>
-        <td>Rango probable (80%%)</td>
-        <td>$%s - $%s</td>
-        <td>$%s - $%s</td>
-      </tr>
-      <tr>
-        <td>Peor escenario (5%%)</td>
-        <td>$%s USD</td>
-        <td>$%s USD</td>
-      </tr>
-    </table>
-    
-    <div class="chart-container">
-      <h3>📈 Evolución del Patrimonio</h3>
-      <img src="data:image/png;base64,%s" alt="Evolución del patrimonio">
-    </div>
-    
-    <div class="chart-container">
-      <h3>📊 Distribución del Resultado Final</h3>
-      <img src="data:image/png;base64,%s" alt="Distribución">
-    </div>
-    
-    <div class="chart-container">
-      <h3>⚖️ Diferencia Compra - Alquiler</h3>
-      <img src="data:image/png;base64,%s" alt="Diferencia">
-    </div>
-    
-    <div class="disclaimer">
-      <strong>⚠️ Disclaimer:</strong> Este análisis es una herramienta de apoyo basada en simulaciones Monte Carlo con %d escenarios. 
-      Los resultados dependen de supuestos que pueden no cumplirse. No constituye asesoramiento financiero. 
-      Consulte con un profesional antes de tomar decisiones.
-    </div>
-    
-    <p class="footer">
-      Generado el %s | Simulador de Vivienda Argentina
-    </p>
-  </div>
-</body>
-</html>',
-  recomendacion,
-  format(ahorros_actuales_usd, big.mark=","),
-  format(salario_mensual_usd, big.mark=","),
-  format(valor_propiedad_usd, big.mark=","),
-  format(round(monto_credito), big.mark=","), plazo_anos,
-  format(alquiler_mensual_usd, big.mark=","),
-  ubicacion,
-  format(round(s_compra$media), big.mark=","),
-  format(round(s_alquiler$media), big.mark=","),
-  format(round(s_compra$mediana), big.mark=","),
-  format(round(s_alquiler$mediana), big.mark=","),
-  format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=","),
-  format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=","),
-  format(round(s_compra$peor_5pct), big.mark=","),
-  format(round(s_alquiler$peor_5pct), big.mark=","),
-  img1_b64, img2_b64, img3_b64,
-  n_simulaciones,
-  format(Sys.time(), "%d/%m/%Y %H:%M")
-)
-
-# ══════════════════════════════════════════════════════════════
-#                    ABRIR EN NUEVA PESTAÑA
-# ══════════════════════════════════════════════════════════════
-
-html_raw <- charToRaw(html_content)
-html_b64 <- to_base64(html_raw)
-data_uri <- paste0("data:text/html;base64,", html_b64)
-
-cat("\n✅ ¡Simulación completada!\n\n")
-cat("═══════════════════════════════════════════════════════════\n")
-cat("          📊 RESULTADOS LISTOS\n")
-cat("═══════════════════════════════════════════════════════════\n\n")
+cat("\n")
+cat("╔══════════════════════════════════════════════════════════════╗\n")
+cat("║                      RESULTADOS                              ║\n")
+cat("╚══════════════════════════════════════════════════════════════╝\n\n")
 
 if (prob_compra_gana > 0.6) {
-  cat(sprintf("🏠 COMPRAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("   Gana en %.0f%% de los escenarios\n\n", prob_compra_gana * 100))
+  cat("┌─────────────────────────────────────────────────────────────┐\n")
+  cat("│       RECOMENDACION: COMPRAR                                │\n")
+  cat("└─────────────────────────────────────────────────────────────┘\n")
+  cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+  cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", prob_compra_gana * 100, n_simulaciones))
 } else if (prob_compra_gana < 0.4) {
-  cat(sprintf("🔑 ALQUILAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("   Gana en %.0f%% de los escenarios\n\n", (1-prob_compra_gana) * 100))
+  cat("┌─────────────────────────────────────────────────────────────┐\n")
+  cat("│       RECOMENDACION: ALQUILAR                               │\n")
+  cat("└─────────────────────────────────────────────────────────────┘\n")
+  cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+  cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", (1-prob_compra_gana) * 100, n_simulaciones))
 } else {
-  cat("⚖️ Ambas opciones son SIMILARES\n\n")
+  cat("┌─────────────────────────────────────────────────────────────┐\n")
+  cat("│       RESULTADO: AMBAS OPCIONES SON SIMILARES               │\n")
+  cat("└─────────────────────────────────────────────────────────────┘\n")
+  cat(sprintf("\n   Compra gana en %.0f%% de escenarios\n", prob_compra_gana * 100))
+  cat(sprintf("   Alquiler gana en %.0f%% de escenarios\n\n", (1-prob_compra_gana) * 100))
 }
 
-cat("👉 Haga clic en el botón de abajo para ver el reporte completo:\n\n")
+cat("─────────────────────────────────────────────────────────────────\n")
+cat("                 SU CONFIGURACION\n")
+cat("─────────────────────────────────────────────────────────────────\n")
+cat(sprintf("   Ahorros: $%s    |    Salario: $%s/mes\n", 
+            format(ahorros_actuales_usd, big.mark=","),
+            format(salario_mensual_usd, big.mark=",")))
+cat(sprintf("   Propiedad: $%s  |    Credito: $%s a %d anos\n",
+            format(valor_propiedad_usd, big.mark=","),
+            format(round(monto_credito), big.mark=","),
+            plazo_anos))
+cat(sprintf("   Alquiler: $%s/mes   |    Ubicacion: %s\n\n",
+            format(alquiler_mensual_usd, big.mark=","),
+            ubicacion))
 
-# Create clickable button using JavaScript (works in WebR)
-js_code <- sprintf('
-<button onclick="window.open(`%s`, `_blank`)" style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-  🔗 ABRIR REPORTE COMPLETO EN NUEVA PESTAÑA
-</button>
-<p style="margin-top: 10px; color: #666; font-size: 12px;">Si el botón no funciona, copie este enlace en una nueva pestaña:</p>
-<input type="text" value="%s" onclick="this.select(); document.execCommand(`copy`);" readonly style="width: 100%%; padding: 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; cursor: pointer;" title="Click para copiar">
-', data_uri, data_uri)
+cat("─────────────────────────────────────────────────────────────────\n")
+cat(sprintf("            PATRIMONIO ESTIMADO EN %d ANOS\n", plazo_anos))
+cat("─────────────────────────────────────────────────────────────────\n\n")
 
-cat(js_code)
+cat("   COMPRA:\n")
+cat(sprintf("      Promedio:        $%s USD\n", format(round(s_compra$media), big.mark=",")))
+cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", 
+            format(round(s_compra$q10), big.mark=","),
+            format(round(s_compra$q90), big.mark=",")))
+cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
+
+cat("   ALQUILER:\n")
+cat(sprintf("      Promedio:        $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
+cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", 
+            format(round(s_alquiler$q10), big.mark=","),
+            format(round(s_alquiler$q90), big.mark=",")))
+cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
+
+cat("═════════════════════════════════════════════════════════════════\n")
+cat("                       GRAFICOS\n")
+cat("═════════════════════════════════════════════════════════════════\n\n")
+
+print(g1)
+print(g2)
+print(g3)
+
+cat("\n Analisis completado\n")
 ```
 
 ---
@@ -1121,3 +861,4 @@ cat(js_code)
 
 **Ubicación:** CABA asume 3% apreciación anual en USD, GBA asume 1%.
 :::
+
