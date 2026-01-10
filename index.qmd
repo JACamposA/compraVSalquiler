@@ -1,6 +1,6 @@
 ---
-title: "🏠 Simulador de Vivienda Argentina"
-subtitle: "Compra vs Alquiler - Análisis Monte Carlo"
+title: "Simulador de Vivienda Argentina"
+subtitle: "Compra vs Alquiler - Analisis Monte Carlo"
 format: 
   html:
     theme: flatly
@@ -13,34 +13,6 @@ webr:
   autoload-packages: true
 ---
 
-```{=html}
-<style>
-.instructions-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px 25px;
-  border-radius: 12px;
-  margin-bottom: 25px;
-}
-.instructions-box h3 { margin-top: 0; }
-.instructions-box ol { margin-bottom: 0; }
-
-.input-section {
-  background: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 20px;
-  margin: 20px 0;
-}
-.input-section h4 {
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
-  padding-bottom: 10px;
-  margin-top: 0;
-}
-</style>
-```
-
 ```{webr-r}
 #| context: setup
 #| include: false
@@ -51,13 +23,12 @@ library(dplyr)
 library(tidyr)
 library(scales)
 library(Matrix)
-library(base64enc)
 
 select <- dplyr::select
 filter <- dplyr::filter
 
 # ============================================================
-# SIMULATION ENGINE (hidden from user)
+# SIMULATION ENGINE (all hidden from user)
 # ============================================================
 
 crear_matriz_correlacion <- function(cor_inflacion_tc, cor_salario_inflacion, 
@@ -70,11 +41,8 @@ crear_matriz_correlacion <- function(cor_inflacion_tc, cor_salario_inflacion,
   Sigma[1, 6] <- Sigma[6, 1] <- cor_alquiler_inflacion
   Sigma[1, 4] <- Sigma[4, 1] <- cor_inmobiliario_inflacion
   Sigma[4, 5] <- Sigma[5, 4] <- cor_inmobiliario_bolsa
-  
   eigen_vals <- eigen(Sigma)$values
-  if (any(eigen_vals <= 0)) {
-    Sigma <- as.matrix(Matrix::nearPD(Sigma)$mat)
-  }
+  if (any(eigen_vals <= 0)) Sigma <- as.matrix(Matrix::nearPD(Sigma)$mat)
   return(Sigma)
 }
 
@@ -84,11 +52,9 @@ generar_shocks_correlacionados <- function(n_periodos, Sigma) {
   return(as.data.frame(shocks))
 }
 
-simular_regimen_crisis <- function(n_meses, prob_crisis_anual, 
-                                    duracion_crisis_meses_media, duracion_crisis_meses_sd) {
+simular_regimen_crisis <- function(n_meses, prob_crisis_anual, duracion_crisis_meses_media, duracion_crisis_meses_sd) {
   en_crisis <- rep(FALSE, n_meses)
   meses_restantes_crisis <- 0
-  
   for (mes in 1:n_meses) {
     if (meses_restantes_crisis > 0) {
       en_crisis[mes] <- TRUE
@@ -111,35 +77,22 @@ generar_eventos_vida <- function(n_anos, prob_perdida_empleo_anual, duracion_des
                                   prob_problema_legal_propiedad, prob_no_renovacion_contrato,
                                   prob_cambio_necesidad_espacio, duracion_contrato_anos,
                                   magnitud_aumento_significativo, caida_temporal_cambio_carrera) {
-  eventos <- list(
-    perdida_empleo = rep(FALSE, n_anos),
-    meses_desempleo = rep(0, n_anos),
-    aumento_significativo = rep(FALSE, n_anos),
-    cambio_carrera = rep(FALSE, n_anos),
-    reparacion_mayor = rep(FALSE, n_anos),
-    problema_legal = rep(FALSE, n_anos),
-    no_renovacion_alquiler = rep(FALSE, n_anos),
-    cambio_espacio = rep(FALSE, n_anos)
-  )
-  
+  eventos <- list(perdida_empleo = rep(FALSE, n_anos), meses_desempleo = rep(0, n_anos),
+                  aumento_significativo = rep(FALSE, n_anos), cambio_carrera = rep(FALSE, n_anos),
+                  reparacion_mayor = rep(FALSE, n_anos), problema_legal = rep(FALSE, n_anos),
+                  no_renovacion_alquiler = rep(FALSE, n_anos), cambio_espacio = rep(FALSE, n_anos))
   for (ano in 1:n_anos) {
     if (runif(1) < prob_perdida_empleo_anual) {
       eventos$perdida_empleo[ano] <- TRUE
-      eventos$meses_desempleo[ano] <- max(1, round(rnorm(1, duracion_desempleo_meses_media, 
-                                                         duracion_desempleo_meses_sd)))
+      eventos$meses_desempleo[ano] <- max(1, round(rnorm(1, duracion_desempleo_meses_media, duracion_desempleo_meses_sd)))
     }
     if (!eventos$perdida_empleo[ano]) {
-      if (runif(1) < prob_aumento_significativo_anual) {
-        eventos$aumento_significativo[ano] <- TRUE
-      } else if (runif(1) < prob_cambio_carrera) {
-        eventos$cambio_carrera[ano] <- TRUE
-      }
+      if (runif(1) < prob_aumento_significativo_anual) eventos$aumento_significativo[ano] <- TRUE
+      else if (runif(1) < prob_cambio_carrera) eventos$cambio_carrera[ano] <- TRUE
     }
     eventos$reparacion_mayor[ano] <- runif(1) < prob_reparacion_mayor_anual
     eventos$problema_legal[ano] <- runif(1) < prob_problema_legal_propiedad
-    if (ano %% duracion_contrato_anos == 0) {
-      eventos$no_renovacion_alquiler[ano] <- runif(1) < prob_no_renovacion_contrato
-    }
+    if (ano %% duracion_contrato_anos == 0) eventos$no_renovacion_alquiler[ano] <- runif(1) < prob_no_renovacion_contrato
     eventos$cambio_espacio[ano] <- runif(1) < prob_cambio_necesidad_espacio
   }
   return(eventos)
@@ -152,56 +105,39 @@ calcular_utilidad_crra <- function(wealth, gamma) {
 }
 
 simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
-  
   valor_propiedad_actual <- p$valor_propiedad_usd
   salario_mensual <- p$salario_mensual_inicial_usd
   salario_base_pre_crisis <- salario_mensual
   deuda_uva <- p$monto_credito_usd
   inversiones_comprador <- p$ahorros_excedentes_usd
-  deuda_emergencia <- 0
-  uva_index <- 1
-  tipo_cambio <- 1
-  
+  deuda_emergencia <- 0; uva_index <- 1; tipo_cambio <- 1
   tasa_real_mensual <- p$tasa_real_uva_anual / 12
   n_pagos <- p$meses_totales
-  cuota_mensual_uva <- deuda_uva * (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / 
-    ((1 + tasa_real_mensual)^n_pagos - 1)
-  
+  cuota_mensual_uva <- deuda_uva * (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
   patrimonio_neto <- numeric(p$meses_totales + 1)
   en_stress <- numeric(p$meses_totales + 1)
   utilidad_acumulada <- 0
-  
   patrimonio_neto[1] <- valor_propiedad_actual - deuda_uva + inversiones_comprador
-  
-  meses_sin_empleo_restantes <- 0
-  en_crisis_actual <- FALSE
-  meses_en_crisis <- 0
+  meses_sin_empleo_restantes <- 0; en_crisis_actual <- FALSE; meses_en_crisis <- 0
   
   for (mes in 1:p$meses_totales) {
     ano_actual <- ceiling(mes / 12)
     crisis_este_mes <- if (p$modelar_crisis) crisis_vector[mes] else FALSE
-    
     if (crisis_este_mes && !en_crisis_actual) {
-      en_crisis_actual <- TRUE
-      meses_en_crisis <- 1
+      en_crisis_actual <- TRUE; meses_en_crisis <- 1
       salario_base_pre_crisis <- salario_mensual
       salario_mensual <- salario_mensual * (1 - p$caida_salario_real_crisis)
       valor_propiedad_actual <- valor_propiedad_actual * (1 - p$caida_inmobiliario_crisis)
-    } else if (!crisis_este_mes && en_crisis_actual) {
-      en_crisis_actual <- FALSE
-    } else if (crisis_este_mes) {
-      meses_en_crisis <- meses_en_crisis + 1
-    }
+    } else if (!crisis_este_mes && en_crisis_actual) { en_crisis_actual <- FALSE
+    } else if (crisis_este_mes) { meses_en_crisis <- meses_en_crisis + 1 }
     
     base_inflacion <- if (crisis_este_mes) p$inflacion_crisis_mensual else p$inflacion_mensual_ars_base
     shock_inflacion <- shocks$inflacion[mes] * p$inflacion_volatilidad_mensual
     inflacion_mes <- max(0.001, base_inflacion + shock_inflacion)
-    
     base_tc <- inflacion_mes + (p$desviacion_ppp_anual / 12)
     if (crisis_este_mes) base_tc <- base_tc + (p$devaluacion_adicional_crisis / p$duracion_crisis_meses_media)
     shock_tc <- shocks$tc[mes] * p$desviacion_ppp_volatilidad / 12
     tc_crecimiento <- base_tc + shock_tc
-    
     uva_index <- uva_index * (1 + inflacion_mes)
     tipo_cambio <- tipo_cambio * (1 + tc_crecimiento)
     
@@ -226,18 +162,14 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
       }
     }
     
-    if (meses_sin_empleo_restantes > 0) {
-      ingreso_mes <- 0
-      meses_sin_empleo_restantes <- meses_sin_empleo_restantes - 1
+    if (meses_sin_empleo_restantes > 0) { ingreso_mes <- 0; meses_sin_empleo_restantes <- meses_sin_empleo_restantes - 1
     } else {
       if (mes %% 12 == 1 && mes > 1 && !crisis_este_mes) {
         crecimiento_real <- p$crecimiento_salario_anual_usd + shocks$salario[mes] * p$salario_volatilidad_anual
         salario_mensual <- salario_mensual * (1 + crecimiento_real)
         salario_base_pre_crisis <- salario_mensual
       }
-      if (!crisis_este_mes && salario_mensual < salario_base_pre_crisis) {
-        salario_mensual <- min(salario_base_pre_crisis, salario_mensual * 1.02)
-      }
+      if (!crisis_este_mes && salario_mensual < salario_base_pre_crisis) salario_mensual <- min(salario_base_pre_crisis, salario_mensual * 1.02)
       ingreso_mes <- salario_mensual
     }
     
@@ -252,14 +184,11 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
     amortizacion_uva <- cuota_mensual_uva - interes_uva
     deuda_uva <- max(0, deuda_uva - amortizacion_uva)
     deuda_hipotecaria_usd <- (deuda_uva * uva_index) / tipo_cambio
-    
     costo_operativo_mes <- valor_propiedad_actual * (p$costo_mantenimiento_anual_pct + p$impuesto_inmobiliario_anual + p$seguro_hogar_anual_pct) / 12
     gastos_vivienda_total <- cuota_usd + costo_operativo_mes
-    
     base_retorno <- p$rendimiento_bolsa_base / 12
     if (crisis_este_mes) base_retorno <- -p$caida_bolsa_crisis / p$duracion_crisis_meses_media
     retorno_mes <- base_retorno + shocks$bolsa[mes] * p$volatilidad_bolsa / sqrt(12)
-    
     if (inversiones_comprador > 0) inversiones_comprador <- inversiones_comprador * (1 + retorno_mes)
     if (deuda_emergencia > 0) deuda_emergencia <- deuda_emergencia * (1 + 0.10/12)
     
@@ -289,13 +218,11 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
     
     ratio_cuota <- if (ingreso_mes > 0) cuota_usd / ingreso_mes else 1
     en_stress_mes <- ratio_cuota > p$umbral_stress_financiero || deuda_emergencia > 0
-    
     if (p$modelar_utilidad) {
       utilidad_mes <- p$utilidad_propiedad_mensual_usd
       if (en_stress_mes) utilidad_mes <- utilidad_mes * 0.5
       utilidad_acumulada <- utilidad_acumulada + utilidad_mes
     }
-    
     patrimonio_neto[mes + 1] <- valor_propiedad_actual - deuda_hipotecaria_usd + inversiones_comprador - deuda_emergencia
     en_stress[mes + 1] <- as.numeric(en_stress_mes)
   }
@@ -309,58 +236,38 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
   }
   impuesto_inversiones <- 0
   if (inversiones_comprador > 0) impuesto_inversiones <- (inversiones_comprador * 0.5) * p$tasa_impuesto_ganancias_financieras
-  
   patrimonio_final <- valor_venta_bruto - costo_venta - impuesto_ganancia + inversiones_comprador - impuesto_inversiones - deuda_emergencia
-  
   utilidad_total <- NA
   if (p$modelar_utilidad) utilidad_total <- calcular_utilidad_crra(max(1, patrimonio_final) + utilidad_acumulada, p$coef_aversion_riesgo)
-  
   meses_anuales <- seq(0, p$meses_totales, by = 12)
-  return(data.frame(
-    año = 0:p$plazo_anos,
-    patrimonio = patrimonio_neto[meses_anuales + 1],
-    patrimonio_final = c(rep(NA, p$plazo_anos), patrimonio_final),
-    utilidad_total = utilidad_total,
-    tipo = "Compra (UVA)",
-    simulacion = sim_id
-  ))
+  return(data.frame(año = 0:p$plazo_anos, patrimonio = patrimonio_neto[meses_anuales + 1], 
+                    patrimonio_final = c(rep(NA, p$plazo_anos), patrimonio_final),
+                    utilidad_total = utilidad_total, tipo = "Compra (UVA)", simulacion = sim_id))
 }
 
 simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
-  
   capital_inicial_bruto <- p$inversion_inicial_alquiler
   deposito_actual <- p$alquiler_mensual_inicial_usd * p$deposito_alquiler_meses
   comision_inicial <- p$alquiler_mensual_inicial_usd * p$comision_inmobiliaria_alquiler
   capital_invertido <- capital_inicial_bruto - comision_inicial - deposito_actual
-  
   alquiler_mensual <- p$alquiler_mensual_inicial_usd
   salario_mensual <- p$salario_mensual_inicial_usd
   salario_base_pre_crisis <- salario_mensual
-  
   patrimonio_neto <- numeric(p$meses_totales + 1)
   patrimonio_neto[1] <- capital_invertido + deposito_actual
-  utilidad_acumulada <- 0
-  meses_sin_empleo_restantes <- 0
-  total_costos_mudanza <- 0
-  en_crisis_actual <- FALSE
-  meses_en_crisis <- 0
-  ya_vendio_panico <- FALSE
+  utilidad_acumulada <- 0; meses_sin_empleo_restantes <- 0; total_costos_mudanza <- 0
+  en_crisis_actual <- FALSE; meses_en_crisis <- 0; ya_vendio_panico <- FALSE
   valor_max_portfolio <- capital_invertido
   
   for (mes in 1:p$meses_totales) {
     ano_actual <- ceiling(mes / 12)
     crisis_este_mes <- if (p$modelar_crisis) crisis_vector[mes] else FALSE
-    
     if (crisis_este_mes && !en_crisis_actual) {
-      en_crisis_actual <- TRUE
-      meses_en_crisis <- 1
+      en_crisis_actual <- TRUE; meses_en_crisis <- 1
       salario_base_pre_crisis <- salario_mensual
       salario_mensual <- salario_mensual * (1 - p$caida_salario_real_crisis)
-    } else if (!crisis_este_mes && en_crisis_actual) {
-      en_crisis_actual <- FALSE
-    } else if (crisis_este_mes) {
-      meses_en_crisis <- meses_en_crisis + 1
-    }
+    } else if (!crisis_este_mes && en_crisis_actual) { en_crisis_actual <- FALSE
+    } else if (crisis_este_mes) { meses_en_crisis <- meses_en_crisis + 1 }
     
     if (p$modelar_eventos_vida && mes %% 12 == 1 && ano_actual <= p$plazo_anos) {
       if (eventos$perdida_empleo[ano_actual]) meses_sin_empleo_restantes <- eventos$meses_desempleo[ano_actual]
@@ -385,17 +292,13 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
       }
     }
     
-    if (meses_sin_empleo_restantes > 0) {
-      ingreso_mes <- 0
-      meses_sin_empleo_restantes <- meses_sin_empleo_restantes - 1
+    if (meses_sin_empleo_restantes > 0) { ingreso_mes <- 0; meses_sin_empleo_restantes <- meses_sin_empleo_restantes - 1
     } else {
       if (mes %% 12 == 1 && mes > 1 && !crisis_este_mes) {
         salario_mensual <- salario_mensual * (1 + p$crecimiento_salario_anual_usd + shocks$salario[mes] * p$salario_volatilidad_anual)
         salario_base_pre_crisis <- salario_mensual
       }
-      if (!crisis_este_mes && salario_mensual < salario_base_pre_crisis) {
-        salario_mensual <- min(salario_base_pre_crisis, salario_mensual * 1.02)
-      }
+      if (!crisis_este_mes && salario_mensual < salario_base_pre_crisis) salario_mensual <- min(salario_base_pre_crisis, salario_mensual * 1.02)
       ingreso_mes <- salario_mensual
     }
     
@@ -417,23 +320,14 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
       }
     }
     if (ya_vendio_panico) retorno_mes <- p$tasa_libre_riesgo_anual / 12
-    
     if (capital_invertido > 0) capital_invertido <- capital_invertido * (1 + retorno_mes)
-    
-    if (ingreso_mes > 0) {
-      capital_invertido <- capital_invertido + (ingreso_mes * p$tasa_ahorro_pct - alquiler_mensual)
-    } else {
-      capital_invertido <- capital_invertido - alquiler_mensual
-    }
-    
+    if (ingreso_mes > 0) { capital_invertido <- capital_invertido + (ingreso_mes * p$tasa_ahorro_pct - alquiler_mensual)
+    } else { capital_invertido <- capital_invertido - alquiler_mensual }
     if (total_costos_mudanza > 0) { capital_invertido <- capital_invertido - total_costos_mudanza; total_costos_mudanza <- 0 }
-    
     if (mes %% 12 == 0 && capital_invertido > 0) {
       capital_invertido <- capital_invertido - (capital_invertido * 0.02 * p$tasa_impuesto_dividendos)
     }
-    
     if (p$modelar_utilidad) utilidad_acumulada <- utilidad_acumulada + p$utilidad_flexibilidad_mensual_usd
-    
     patrimonio_neto[mes + 1] <- capital_invertido + deposito_actual
   }
   
@@ -442,423 +336,298 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
   if (patrimonio_final > capital_base) {
     patrimonio_final <- patrimonio_final - ((patrimonio_final - capital_base) * p$tasa_impuesto_ganancias_financieras)
   }
-  
   utilidad_total <- NA
   if (p$modelar_utilidad) utilidad_total <- calcular_utilidad_crra(max(1, patrimonio_final) + utilidad_acumulada, p$coef_aversion_riesgo)
-  
   meses_anuales <- seq(0, p$meses_totales, by = 12)
-  return(data.frame(
-    año = 0:p$plazo_anos,
-    patrimonio = patrimonio_neto[meses_anuales + 1],
-    patrimonio_final = c(rep(NA, p$plazo_anos), patrimonio_final),
-    utilidad_total = utilidad_total,
-    tipo = "Alquiler + Inversión",
-    simulacion = sim_id
-  ))
-}
-
-validar_parametros <- function(p) {
-  errores <- c()
-  if (p$tasa_ahorro_pct < 0 || p$tasa_ahorro_pct > 1) errores <- c(errores, "tasa_ahorro_pct debe estar entre 0 y 1")
-  if (p$enganche_pct < 0 || p$enganche_pct > 1) errores <- c(errores, "enganche_pct debe estar entre 0 y 1")
-  if (p$salario_mensual_inicial_usd <= 0) errores <- c(errores, "salario_mensual_inicial_usd debe ser positivo")
-  if (p$valor_propiedad_usd <= 0) errores <- c(errores, "valor_propiedad_usd debe ser positivo")
-  if (p$alquiler_mensual_inicial_usd <= 0) errores <- c(errores, "alquiler_mensual_inicial_usd debe ser positivo")
-  if (p$plazo_anos <= 0 || p$plazo_anos > 40) errores <- c(errores, "plazo_anos debe estar entre 1 y 40")
-  return(list(errores = errores))
+  return(data.frame(año = 0:p$plazo_anos, patrimonio = patrimonio_neto[meses_anuales + 1],
+                    patrimonio_final = c(rep(NA, p$plazo_anos), patrimonio_final),
+                    utilidad_total = utilidad_total, tipo = "Alquiler + Inversion", simulacion = sim_id))
 }
 
 ejecutar_simulacion_completa <- function(p) {
   set.seed(p$semilla_aleatoria)
-  
   Sigma <- crear_matriz_correlacion(p$cor_inflacion_tc, p$cor_salario_inflacion, 
                                      p$cor_inmobiliario_bolsa, p$cor_alquiler_inflacion, 
                                      p$cor_inmobiliario_inflacion)
-  
   resultados_lista <- vector("list", p$n_simulaciones * 2)
   idx <- 1
-  
   for (sim in 1:p$n_simulaciones) {
     shocks <- generar_shocks_correlacionados(p$meses_totales, Sigma)
     crisis_vector <- if (p$modelar_crisis) simular_regimen_crisis(p$meses_totales, p$prob_crisis_anual, p$duracion_crisis_meses_media, p$duracion_crisis_meses_sd) else rep(FALSE, p$meses_totales)
-    eventos <- if (p$modelar_eventos_vida) generar_eventos_vida(
-      p$plazo_anos, p$prob_perdida_empleo_anual, p$duracion_desempleo_meses_media,
-      p$duracion_desempleo_meses_sd, p$prob_aumento_significativo_anual, p$prob_cambio_carrera,
-      p$prob_reparacion_mayor_anual, p$prob_problema_legal_propiedad, p$prob_no_renovacion_contrato,
-      p$prob_cambio_necesidad_espacio, p$duracion_contrato_anos,
-      p$magnitud_aumento_significativo, p$caida_temporal_cambio_carrera
-    ) else NULL
-    
+    eventos <- if (p$modelar_eventos_vida) generar_eventos_vida(p$plazo_anos, p$prob_perdida_empleo_anual, p$duracion_desempleo_meses_media, p$duracion_desempleo_meses_sd, p$prob_aumento_significativo_anual, p$prob_cambio_carrera, p$prob_reparacion_mayor_anual, p$prob_problema_legal_propiedad, p$prob_no_renovacion_contrato, p$prob_cambio_necesidad_espacio, p$duracion_contrato_anos, p$magnitud_aumento_significativo, p$caida_temporal_cambio_carrera) else NULL
     resultados_lista[[idx]] <- simular_compra_completa(sim, shocks, crisis_vector, eventos, p)
     idx <- idx + 1
     resultados_lista[[idx]] <- simular_alquiler_completa(sim, shocks, crisis_vector, eventos, p)
     idx <- idx + 1
   }
-  
   do.call(rbind, resultados_lista)
 }
 
-message("✅ Motor de simulación cargado")
+# ============================================================
+# HELPER FUNCTION: Build params from user inputs
+# ============================================================
+construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
+                              valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
+                              alquiler_mensual_usd, deposito_meses, comision_meses,
+                              ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
+                              n_simulaciones) {
+  apreciacion_propiedad <- if (ubicacion == "GBA") 0.01 else 0.03
+  meses_totales <- plazo_anos * 12
+  monto_credito <- valor_propiedad_usd * (1 - enganche_pct)
+  enganche <- valor_propiedad_usd * enganche_pct
+  gastos_escritura <- valor_propiedad_usd * 0.10
+  costo_total_compra <- enganche + gastos_escritura
+  ahorros_excedentes <- max(0, ahorros_actuales_usd - costo_total_compra)
+  
+  list(
+    ahorros_actuales_usd = ahorros_actuales_usd, salario_mensual_inicial_usd = salario_mensual_usd,
+    tasa_ahorro_pct = tasa_ahorro_pct, valor_propiedad_usd = valor_propiedad_usd,
+    enganche_pct = enganche_pct, enganche_usd = enganche, monto_credito_usd = monto_credito,
+    costo_total_compra = costo_total_compra, ahorros_excedentes_usd = ahorros_excedentes,
+    plazo_anos = plazo_anos, meses_totales = meses_totales, tasa_real_uva_anual = tasa_real_uva_anual,
+    gastos_escritura_pct = 0.10, costos_venta_pct = 0.06, costo_mantenimiento_anual_pct = 0.02,
+    impuesto_inmobiliario_anual = 0.01, seguro_hogar_anual_pct = 0.003,
+    alquiler_mensual_inicial_usd = alquiler_mensual_usd, deposito_alquiler_meses = deposito_meses,
+    comision_inmobiliaria_alquiler = comision_meses, inversion_inicial_alquiler = ahorros_actuales_usd,
+    duracion_contrato_anos = 2, inflacion_mensual_ars_base = 0.04, inflacion_volatilidad_mensual = 0.02,
+    desviacion_ppp_anual = 0.00, desviacion_ppp_volatilidad = 0.05,
+    crecimiento_salario_anual_usd = crecimiento_salario_anual, salario_volatilidad_anual = 0.03,
+    apreciacion_propiedad_anual_usd = apreciacion_propiedad, apreciacion_volatilidad_anual = 0.08,
+    alquiler_crecimiento_real_anual = 0.01, alquiler_volatilidad_anual = 0.05,
+    rendimiento_bolsa_base = rendimiento_inversiones, volatilidad_bolsa = 0.15, tasa_libre_riesgo_anual = 0.02,
+    cor_inflacion_tc = 0.80, cor_salario_inflacion = 0.30, cor_inmobiliario_bolsa = 0.40,
+    cor_alquiler_inflacion = 0.60, cor_inmobiliario_inflacion = 0.50,
+    modelar_crisis = TRUE, prob_crisis_anual = 0.08, duracion_crisis_meses_media = 18, duracion_crisis_meses_sd = 6,
+    inflacion_crisis_mensual = 0.12, devaluacion_adicional_crisis = 0.40, caida_salario_real_crisis = 0.20,
+    caida_inmobiliario_crisis = 0.25, caida_bolsa_crisis = 0.35,
+    modelar_eventos_vida = TRUE, prob_perdida_empleo_anual = 0.05, duracion_desempleo_meses_media = 4,
+    duracion_desempleo_meses_sd = 2, prob_aumento_significativo_anual = 0.10, magnitud_aumento_significativo = 0.20,
+    prob_cambio_carrera = 0.03, caida_temporal_cambio_carrera = 0.15, prob_reparacion_mayor_anual = 0.08,
+    costo_reparacion_mayor_pct = 0.05, prob_problema_legal_propiedad = 0.02, costo_problema_legal_pct = 0.03,
+    prob_no_renovacion_contrato = 0.12, costo_mudanza_usd = 1000, premium_alquiler_nuevo_pct = 0.08,
+    prob_cambio_necesidad_espacio = 0.05, aumento_alquiler_upgrade_pct = 0.25,
+    tasa_ganancias_capital_inmuebles = 0.15, exencion_vivienda_unica = TRUE, anos_tenencia_para_exencion = 2,
+    umbral_bienes_personales_usd = 100000, tasa_bienes_personales = 0.005,
+    tasa_impuesto_dividendos = 0.07, tasa_impuesto_ganancias_financieras = 0.15,
+    modelar_utilidad = TRUE, coef_aversion_riesgo = 2.0,
+    utilidad_propiedad_mensual_usd = 150, utilidad_flexibilidad_mensual_usd = 100,
+    modelar_comportamiento = TRUE, umbral_stress_financiero = 0.45,
+    umbral_panico_venta_bolsa = -0.25, prob_panico_venta = 0.30, perdida_por_venta_panico = 0.10,
+    n_simulaciones = n_simulaciones, semilla_aleatoria = 42
+  )
+}
+
+# ============================================================
+# MAIN FUNCTION: Run simulation and display results
+# ============================================================
+ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
+                                valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
+                                alquiler_mensual_usd, deposito_meses, comision_meses,
+                                ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
+                                n_simulaciones) {
+  
+  cat("\n")
+  cat("Procesando simulacion...\n")
+  cat("Simulando", n_simulaciones, "escenarios para", plazo_anos, "anos...\n\n")
+  
+  # Build params
+ params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
+                              valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
+                              alquiler_mensual_usd, deposito_meses, comision_meses,
+                              ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
+                              n_simulaciones)
+  
+  # Run simulation
+  resultados <- ejecutar_simulacion_completa(params)
+  
+  # Calculate statistics
+  resultados_final <- resultados %>%
+    filter(año == params$plazo_anos) %>%
+    mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
+  
+  final_compra <- resultados_final$patrimonio[resultados_final$tipo_clean == "Compra"]
+  final_alquiler <- resultados_final$patrimonio[resultados_final$tipo_clean == "Alquiler"]
+  prob_compra_gana <- mean(final_compra > final_alquiler, na.rm = TRUE)
+  diferencia_media <- mean(final_compra - final_alquiler, na.rm = TRUE)
+  
+  stats_finales <- resultados_final %>%
+    group_by(tipo_clean) %>%
+    summarise(media = mean(patrimonio, na.rm = TRUE), mediana = median(patrimonio, na.rm = TRUE),
+              q10 = quantile(patrimonio, 0.10, na.rm = TRUE), q90 = quantile(patrimonio, 0.90, na.rm = TRUE),
+              peor_5pct = quantile(patrimonio, 0.05, na.rm = TRUE), .groups = "drop")
+  
+  s_compra <- stats_finales %>% filter(tipo_clean == "Compra")
+  s_alquiler <- stats_finales %>% filter(tipo_clean == "Alquiler")
+  
+  # Display results
+  cat("================================================================\n")
+  cat("                      RESULTADOS                                \n")
+  cat("================================================================\n\n")
+  
+  if (prob_compra_gana > 0.6) {
+    cat("------------------------------------------------------------\n")
+    cat("       RECOMENDACION: COMPRAR                               \n")
+    cat("------------------------------------------------------------\n")
+    cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+    cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", prob_compra_gana * 100, n_simulaciones))
+  } else if (prob_compra_gana < 0.4) {
+    cat("------------------------------------------------------------\n")
+    cat("       RECOMENDACION: ALQUILAR                              \n")
+    cat("------------------------------------------------------------\n")
+    cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+    cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", (1-prob_compra_gana) * 100, n_simulaciones))
+  } else {
+    cat("------------------------------------------------------------\n")
+    cat("       RESULTADO: AMBAS OPCIONES SON SIMILARES              \n")
+    cat("------------------------------------------------------------\n")
+    cat(sprintf("\n   Compra gana en %.0f%% de escenarios\n", prob_compra_gana * 100))
+    cat(sprintf("   Alquiler gana en %.0f%% de escenarios\n\n", (1-prob_compra_gana) * 100))
+  }
+  
+  cat("------------------------------------------------------------\n")
+  cat("                 SU CONFIGURACION\n")
+  cat("------------------------------------------------------------\n")
+  cat(sprintf("   Ahorros: $%s    |    Salario: $%s/mes\n", 
+              format(ahorros_actuales_usd, big.mark=","), format(salario_mensual_usd, big.mark=",")))
+  cat(sprintf("   Propiedad: $%s  |    Credito: $%s a %d anos\n",
+              format(valor_propiedad_usd, big.mark=","), format(round(params$monto_credito_usd), big.mark=","), plazo_anos))
+  cat(sprintf("   Alquiler: $%s/mes   |    Ubicacion: %s\n\n", format(alquiler_mensual_usd, big.mark=","), ubicacion))
+  
+  cat("------------------------------------------------------------\n")
+  cat(sprintf("            PATRIMONIO ESTIMADO EN %d ANOS\n", plazo_anos))
+  cat("------------------------------------------------------------\n\n")
+  
+  cat("   COMPRA:\n")
+  cat(sprintf("      Promedio:        $%s USD\n", format(round(s_compra$media), big.mark=",")))
+  cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=",")))
+  cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
+  
+  cat("   ALQUILER:\n")
+  cat(sprintf("      Promedio:        $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
+  cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=",")))
+  cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
+  
+  cat("================================================================\n")
+  cat("                       GRAFICOS\n")
+  cat("================================================================\n\n")
+  
+  # Prepare data for plots
+  patrimonio_por_año <- resultados %>%
+    group_by(año, tipo) %>%
+    summarise(media = mean(patrimonio, na.rm = TRUE), mediana = median(patrimonio, na.rm = TRUE),
+              q10 = quantile(patrimonio, 0.10, na.rm = TRUE), q25 = quantile(patrimonio, 0.25, na.rm = TRUE),
+              q75 = quantile(patrimonio, 0.75, na.rm = TRUE), q90 = quantile(patrimonio, 0.90, na.rm = TRUE),
+              .groups = "drop") %>%
+    mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
+  
+  diferencias <- resultados_final %>%
+    dplyr::select(simulacion, tipo_clean, patrimonio) %>%
+    pivot_wider(names_from = tipo_clean, values_from = patrimonio) %>%
+    mutate(diferencia = Compra - Alquiler)
+  
+  # Plot 1
+  g1 <- ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
+    geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
+    geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
+    geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
+    scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    scale_y_continuous(labels = scales::label_dollar(suffix = "K")) +
+    labs(title = "Evolucion del Patrimonio", subtitle = "Linea: mediana | Banda oscura: 50% | Banda clara: 80%",
+         x = "Anos", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
+    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+  print(g1)
+  
+  # Plot 2
+  stats_media <- resultados_final %>% group_by(tipo_clean) %>% summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
+  g2 <- ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
+    geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
+    geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean), linetype = "dashed", linewidth = 1) +
+    scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    labs(title = sprintf("Distribucion del Patrimonio Final (%d anos)", plazo_anos), subtitle = "Lineas punteadas = promedio",
+         x = "Patrimonio Final (miles USD)", y = "Frecuencia", fill = "Estrategia", color = "Promedio") +
+    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+  print(g2)
+  
+  # Plot 3
+  media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
+  pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
+  g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
+    geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
+    geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
+    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
+    labs(title = "Diferencia: Compra - Alquiler",
+         subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", pct_compra_mejor, 100-pct_compra_mejor),
+         x = "Diferencia (miles USD)", y = "Frecuencia") +
+    theme_minimal(base_size = 12)
+  print(g3)
+  
+  cat("\nAnalisis completado\n")
+}
+
+message("Motor de simulacion cargado")
 ```
 
-::: {.instructions-box}
-### 📋 Instrucciones
-
-1. **Modifique los valores** en el bloque de abajo según su situación
-2. **Presione "Run Code"** una sola vez
-3. **Los resultados se abrirán en una nueva pestaña** con todos los gráficos y análisis
-:::
-
-## 📝 Configure sus Parámetros
+## Configure sus Parametros y Ejecute
 
 Edite los valores y luego presione **Run Code**:
 
 ```{webr-r}
-#| label: configurar-y-ejecutar
+# ============================================================
+#                    SUS DATOS
+# ============================================================
 
-# ══════════════════════════════════════════════════════════════
-#                    💰 SU SITUACIÓN FINANCIERA
-# ══════════════════════════════════════════════════════════════
-
-ahorros_actuales_usd       <- 30000    # Total de ahorros disponibles en USD
+ahorros_actuales_usd       <- 30000    # Total ahorros en USD
 salario_mensual_usd        <- 2333     # Ingreso mensual neto en USD
-tasa_ahorro_pct            <- 0.50     # % del salario para vivienda+ahorro (0.30 = 30%)
-
-# ══════════════════════════════════════════════════════════════
-#                    🏠 PROPIEDAD A COMPRAR
-# ══════════════════════════════════════════════════════════════
+tasa_ahorro_pct            <- 0.50     # % del salario para vivienda+ahorro
 
 valor_propiedad_usd        <- 120000   # Precio de la propiedad
 enganche_pct               <- 0.25     # Porcentaje de entrada (0.25 = 25%)
-plazo_anos                 <- 25       # Plazo del crédito en años
-tasa_real_uva_anual        <- 0.06     # Tasa real del crédito UVA (0.06 = 6%)
-
-# ══════════════════════════════════════════════════════════════
-#                    🔑 ALQUILER ALTERNATIVO
-# ══════════════════════════════════════════════════════════════
+plazo_anos                 <- 25       # Plazo del credito en anos
+tasa_real_uva_anual        <- 0.06     # Tasa real del credito UVA
 
 alquiler_mensual_usd       <- 437      # Alquiler mensual en USD
-deposito_meses             <- 3        # Meses de depósito requeridos
-comision_meses             <- 1        # Meses de comisión inmobiliaria
+deposito_meses             <- 3        # Meses de deposito
+comision_meses             <- 1        # Meses de comision
 
-# ══════════════════════════════════════════════════════════════
-#                    📍 UBICACIÓN Y MERCADO
-# ══════════════════════════════════════════════════════════════
+ubicacion                  <- "CABA"   # "CABA" o "GBA"
+crecimiento_salario_anual  <- 0.08     # Crecimiento real del salario
+rendimiento_inversiones    <- 0.07     # Rendimiento esperado inversiones
 
-ubicacion                  <- "CABA"   # "CABA" (3% aprec.) o "GBA" (1% aprec.)
-crecimiento_salario_anual  <- 0.08     # Crecimiento real esperado del salario
-rendimiento_inversiones    <- 0.07     # Rendimiento anual esperado (S&P500 ~7%)
+n_simulaciones             <- 1000     # Cantidad de escenarios
 
-# ══════════════════════════════════════════════════════════════
-#                    ⚙️ CONFIGURACIÓN SIMULACIÓN
-# ══════════════════════════════════════════════════════════════
+# ============================================================
+#                    EJECUTAR
+# ============================================================
 
-n_simulaciones             <- 1000     # Cantidad de escenarios (más = más preciso)
-
-
-# ══════════════════════════════════════════════════════════════
-#     ▼▼▼ NO MODIFICAR DEBAJO DE ESTA LÍNEA ▼▼▼
-# ══════════════════════════════════════════════════════════════
-
-cat("🔄 Procesando simulación...\n\n")
-
-# Calcular valores derivados
-apreciacion_propiedad <- if (ubicacion == "GBA") 0.01 else 0.03
-meses_totales <- plazo_anos * 12
-monto_credito <- valor_propiedad_usd * (1 - enganche_pct)
-enganche <- valor_propiedad_usd * enganche_pct
-gastos_escritura <- valor_propiedad_usd * 0.10
-costo_total_compra <- enganche + gastos_escritura
-ahorros_excedentes <- max(0, ahorros_actuales_usd - costo_total_compra)
-
-# Construir parámetros completos
-params <- list(
-  ahorros_actuales_usd = ahorros_actuales_usd,
-  salario_mensual_inicial_usd = salario_mensual_usd,
-  tasa_ahorro_pct = tasa_ahorro_pct,
-  valor_propiedad_usd = valor_propiedad_usd,
-  enganche_pct = enganche_pct,
-  enganche_usd = enganche,
-  monto_credito_usd = monto_credito,
-  costo_total_compra = costo_total_compra,
-  ahorros_excedentes_usd = ahorros_excedentes,
-  plazo_anos = plazo_anos,
-  meses_totales = meses_totales,
-  tasa_real_uva_anual = tasa_real_uva_anual,
-  gastos_escritura_pct = 0.10,
-  costos_venta_pct = 0.06,
-  costo_mantenimiento_anual_pct = 0.02,
-  impuesto_inmobiliario_anual = 0.01,
-  seguro_hogar_anual_pct = 0.003,
-  alquiler_mensual_inicial_usd = alquiler_mensual_usd,
-  deposito_alquiler_meses = deposito_meses,
-  comision_inmobiliaria_alquiler = comision_meses,
-  inversion_inicial_alquiler = ahorros_actuales_usd,
-  duracion_contrato_anos = 2,
-  inflacion_mensual_ars_base = 0.04,
-  inflacion_volatilidad_mensual = 0.02,
-  desviacion_ppp_anual = 0.00,
-  desviacion_ppp_volatilidad = 0.05,
-  crecimiento_salario_anual_usd = crecimiento_salario_anual,
-  salario_volatilidad_anual = 0.03,
-  apreciacion_propiedad_anual_usd = apreciacion_propiedad,
-  apreciacion_volatilidad_anual = 0.08,
-  alquiler_crecimiento_real_anual = 0.01,
-  alquiler_volatilidad_anual = 0.05,
-  rendimiento_bolsa_base = rendimiento_inversiones,
-  volatilidad_bolsa = 0.15,
-  tasa_libre_riesgo_anual = 0.02,
-  cor_inflacion_tc = 0.80,
-  cor_salario_inflacion = 0.30,
-  cor_inmobiliario_bolsa = 0.40,
-  cor_alquiler_inflacion = 0.60,
-  cor_inmobiliario_inflacion = 0.50,
-  modelar_crisis = TRUE,
-  prob_crisis_anual = 0.08,
-  duracion_crisis_meses_media = 18,
-  duracion_crisis_meses_sd = 6,
-  inflacion_crisis_mensual = 0.12,
-  devaluacion_adicional_crisis = 0.40,
-  caida_salario_real_crisis = 0.20,
-  caida_inmobiliario_crisis = 0.25,
-  caida_bolsa_crisis = 0.35,
-  modelar_eventos_vida = TRUE,
-  prob_perdida_empleo_anual = 0.05,
-  duracion_desempleo_meses_media = 4,
-  duracion_desempleo_meses_sd = 2,
-  prob_aumento_significativo_anual = 0.10,
-  magnitud_aumento_significativo = 0.20,
-  prob_cambio_carrera = 0.03,
-  caida_temporal_cambio_carrera = 0.15,
-  prob_reparacion_mayor_anual = 0.08,
-  costo_reparacion_mayor_pct = 0.05,
-  prob_problema_legal_propiedad = 0.02,
-  costo_problema_legal_pct = 0.03,
-  prob_no_renovacion_contrato = 0.12,
-  costo_mudanza_usd = 1000,
-  premium_alquiler_nuevo_pct = 0.08,
-  prob_cambio_necesidad_espacio = 0.05,
-  aumento_alquiler_upgrade_pct = 0.25,
-  tasa_ganancias_capital_inmuebles = 0.15,
-  exencion_vivienda_unica = TRUE,
-  anos_tenencia_para_exencion = 2,
-  umbral_bienes_personales_usd = 100000,
-  tasa_bienes_personales = 0.005,
-  tasa_impuesto_dividendos = 0.07,
-  tasa_impuesto_ganancias_financieras = 0.15,
-  modelar_utilidad = TRUE,
-  coef_aversion_riesgo = 2.0,
-  utilidad_propiedad_mensual_usd = 150,
-  utilidad_flexibilidad_mensual_usd = 100,
-  modelar_comportamiento = TRUE,
-  umbral_stress_financiero = 0.45,
-  umbral_panico_venta_bolsa = -0.25,
-  prob_panico_venta = 0.30,
-  perdida_por_venta_panico = 0.10,
-  n_simulaciones = n_simulaciones,
-  semilla_aleatoria = 42
-)
-
-# Validar
-validacion <- validar_parametros(params)
-if (length(validacion$errores) > 0) {
-  for (e in validacion$errores) cat("❌ Error:", e, "\n")
-  stop("Corrija los errores antes de continuar.")
-}
-
-cat(sprintf("📊 Simulando %d escenarios para %d años...\n", n_simulaciones, plazo_anos))
-
-# Ejecutar simulación
-resultados <- ejecutar_simulacion_completa(params)
-
-cat("📈 Generando gráficos...\n")
-
-# ══════════════════════════════════════════════════════════════
-#                    CALCULAR ESTADÍSTICAS
-# ══════════════════════════════════════════════════════════════
-
-resultados_final <- resultados %>%
-  filter(año == params$plazo_anos) %>%
-  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-
-final_compra <- resultados_final$patrimonio[resultados_final$tipo_clean == "Compra"]
-final_alquiler <- resultados_final$patrimonio[resultados_final$tipo_clean == "Alquiler"]
-prob_compra_gana <- mean(final_compra > final_alquiler, na.rm = TRUE)
-diferencia_media <- mean(final_compra - final_alquiler, na.rm = TRUE)
-
-stats_finales <- resultados_final %>%
-  group_by(tipo_clean) %>%
-  summarise(
-    media = mean(patrimonio, na.rm = TRUE),
-    mediana = median(patrimonio, na.rm = TRUE),
-    q10 = quantile(patrimonio, 0.10, na.rm = TRUE),
-    q90 = quantile(patrimonio, 0.90, na.rm = TRUE),
-    peor_5pct = quantile(patrimonio, 0.05, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-patrimonio_por_año <- resultados %>%
-  group_by(año, tipo) %>%
-  summarise(
-    media = mean(patrimonio, na.rm = TRUE),
-    mediana = median(patrimonio, na.rm = TRUE),
-    q10 = quantile(patrimonio, 0.10, na.rm = TRUE),
-    q25 = quantile(patrimonio, 0.25, na.rm = TRUE),
-    q75 = quantile(patrimonio, 0.75, na.rm = TRUE),
-    q90 = quantile(patrimonio, 0.90, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-
-diferencias <- resultados_final %>%
-  dplyr::select(simulacion, tipo_clean, patrimonio) %>%
-  pivot_wider(names_from = tipo_clean, values_from = patrimonio) %>%
-  mutate(diferencia = Compra - Alquiler)
-
-# ══════════════════════════════════════════════════════════════
-#                    GENERAR GRÁFICOS
-# ══════════════════════════════════════════════════════════════
-
-# Gráfico 1: Evolución
-g1 <- ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
-  geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
-  geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
-  geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
-  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_y_continuous(labels = scales::label_dollar(scale = 1, suffix = "K")) +
-  labs(title = "Evolución del Patrimonio en el Tiempo",
-       subtitle = "Línea: mediana | Banda oscura: 50% casos | Banda clara: 80% casos",
-       x = "Años", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 16))
-
-# Gráfico 2: Distribución
-stats_media <- resultados_final %>% 
-  group_by(tipo_clean) %>% 
-  summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
-
-g2 <- ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
-  geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
-  geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean),
-             linetype = "dashed", linewidth = 1) +
-  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  labs(title = sprintf("Distribución del Patrimonio Final (%d años)", params$plazo_anos),
-       subtitle = "Líneas punteadas = promedio de cada estrategia",
-       x = "Patrimonio Final (miles USD)", y = "Frecuencia",
-       fill = "Estrategia", color = "Promedio") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 16))
-
-# Gráfico 3: Diferencia
-media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
-pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
-
-g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
-  geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
-  geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
-  geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
-  annotate("label", x = media_dif / 1000, y = Inf, vjust = 1.5,
-           label = sprintf("Promedio: $%.0fK", media_dif / 1000),
-           fill = "white", color = "blue", size = 4) +
-  labs(title = "Diferencia: Compra - Alquiler",
-       subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", 
-                          pct_compra_mejor, 100-pct_compra_mejor),
-       x = "Diferencia (miles USD)", y = "Frecuencia") +
-  theme_minimal(base_size = 14) +
-  theme(plot.title = element_text(face = "bold", size = 16))
-
-# ══════════════════════════════════════════════════════════════
-#                    MOSTRAR RESULTADOS
-# ══════════════════════════════════════════════════════════════
-
-s_compra <- stats_finales %>% filter(tipo_clean == "Compra")
-s_alquiler <- stats_finales %>% filter(tipo_clean == "Alquiler")
-
-cat("\n")
-cat("╔══════════════════════════════════════════════════════════════╗\n")
-cat("║                      RESULTADOS                              ║\n")
-cat("╚══════════════════════════════════════════════════════════════╝\n\n")
-
-if (prob_compra_gana > 0.6) {
-  cat("┌─────────────────────────────────────────────────────────────┐\n")
-  cat("│       RECOMENDACION: COMPRAR                                │\n")
-  cat("└─────────────────────────────────────────────────────────────┘\n")
-  cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", prob_compra_gana * 100, n_simulaciones))
-} else if (prob_compra_gana < 0.4) {
-  cat("┌─────────────────────────────────────────────────────────────┐\n")
-  cat("│       RECOMENDACION: ALQUILAR                               │\n")
-  cat("└─────────────────────────────────────────────────────────────┘\n")
-  cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", (1-prob_compra_gana) * 100, n_simulaciones))
-} else {
-  cat("┌─────────────────────────────────────────────────────────────┐\n")
-  cat("│       RESULTADO: AMBAS OPCIONES SON SIMILARES               │\n")
-  cat("└─────────────────────────────────────────────────────────────┘\n")
-  cat(sprintf("\n   Compra gana en %.0f%% de escenarios\n", prob_compra_gana * 100))
-  cat(sprintf("   Alquiler gana en %.0f%% de escenarios\n\n", (1-prob_compra_gana) * 100))
-}
-
-cat("─────────────────────────────────────────────────────────────────\n")
-cat("                 SU CONFIGURACION\n")
-cat("─────────────────────────────────────────────────────────────────\n")
-cat(sprintf("   Ahorros: $%s    |    Salario: $%s/mes\n", 
-            format(ahorros_actuales_usd, big.mark=","),
-            format(salario_mensual_usd, big.mark=",")))
-cat(sprintf("   Propiedad: $%s  |    Credito: $%s a %d anos\n",
-            format(valor_propiedad_usd, big.mark=","),
-            format(round(monto_credito), big.mark=","),
-            plazo_anos))
-cat(sprintf("   Alquiler: $%s/mes   |    Ubicacion: %s\n\n",
-            format(alquiler_mensual_usd, big.mark=","),
-            ubicacion))
-
-cat("─────────────────────────────────────────────────────────────────\n")
-cat(sprintf("            PATRIMONIO ESTIMADO EN %d ANOS\n", plazo_anos))
-cat("─────────────────────────────────────────────────────────────────\n\n")
-
-cat("   COMPRA:\n")
-cat(sprintf("      Promedio:        $%s USD\n", format(round(s_compra$media), big.mark=",")))
-cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", 
-            format(round(s_compra$q10), big.mark=","),
-            format(round(s_compra$q90), big.mark=",")))
-cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
-
-cat("   ALQUILER:\n")
-cat(sprintf("      Promedio:        $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
-cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", 
-            format(round(s_alquiler$q10), big.mark=","),
-            format(round(s_alquiler$q90), big.mark=",")))
-cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
-
-cat("═════════════════════════════════════════════════════════════════\n")
-cat("                       GRAFICOS\n")
-cat("═════════════════════════════════════════════════════════════════\n\n")
-
-print(g1)
-print(g2)
-print(g3)
-
-cat("\n Analisis completado\n")
+ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
+                   valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
+                   alquiler_mensual_usd, deposito_meses, comision_meses,
+                   ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
+                   n_simulaciones)
 ```
 
 ---
 
 ::: {.callout-note collapse="true"}
-## ℹ️ ¿Qué incluye esta simulación? (click para expandir)
+## Que incluye esta simulacion? (click para expandir)
 
-**Crédito UVA:** Cuota que ajusta por inflación argentina, sistema francés con tasa real configurable.
+**Credito UVA:** Cuota que ajusta por inflacion argentina, sistema frances con tasa real configurable.
 
-**Crisis Argentinas:** 8% probabilidad anual de crisis con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración promedio de 18 meses.
+**Crisis Argentinas:** 8% probabilidad anual de crisis con devaluacion (+40%), caida de salarios (-20%), caida inmobiliaria (-25%), duracion promedio de 18 meses.
 
-**Eventos de Vida:** Pérdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovación de alquiler.
+**Eventos de Vida:** Perdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovacion de alquiler.
 
-**Inversiones:** Quien alquila invierte el capital en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de pánico en caídas.
+**Inversiones:** Quien alquila invierte el capital en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de panico en caidas.
 
-**Impuestos:** ITI, Bienes Personales, ganancias de capital. Exención por vivienda única.
+**Impuestos:** ITI, Bienes Personales, ganancias de capital. Exencion por vivienda unica.
 
-**Ubicación:** CABA asume 3% apreciación anual en USD, GBA asume 1%.
+**Ubicacion:** CABA asume 3% apreciacion anual en USD, GBA asume 1%.
+:::
+
+::: {.callout-warning}
+## Disclaimer
+Este analisis es una herramienta de apoyo, no asesoramiento financiero. Los resultados son simulaciones basadas en supuestos que pueden no cumplirse. Consulte con un profesional antes de tomar decisiones.
 :::
 
