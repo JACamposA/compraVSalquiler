@@ -1,6 +1,6 @@
 ---
-title: "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler"
-subtitle: "Análisis Monte Carlo para decisiones de vivienda"
+title: "🏠 Simulador de Vivienda Argentina"
+subtitle: "Compra vs Alquiler - Análisis Monte Carlo"
 format: 
   html:
     theme: flatly
@@ -9,34 +9,41 @@ engine: knitr
 filters:
   - webr
 webr:
-  packages: ['MASS', 'ggplot2', 'dplyr', 'tidyr', 'scales', 'Matrix']
+  packages: ['MASS', 'ggplot2', 'dplyr', 'tidyr', 'scales', 'Matrix', 'base64enc']
   autoload-packages: true
 ---
 
 ```{=html}
 <style>
-/* Ocultar editor de código en bloques de ejecución y gráficos */
-#ejecutar-todo .webr-monaco-editor-container,
-#ejecutar-todo .monaco-editor,
-#ejecutar-todo .webr-code-editor,
-#grafico-evolucion .webr-monaco-editor-container,
-#grafico-evolucion .monaco-editor,
-#grafico-evolucion .webr-code-editor,
-#grafico-distribucion .webr-monaco-editor-container,
-#grafico-distribucion .monaco-editor,
-#grafico-distribucion .webr-code-editor,
-#grafico-diferencia .webr-monaco-editor-container,
-#grafico-diferencia .monaco-editor,
-#grafico-diferencia .webr-code-editor {
-  display: none !important;
-  height: 0 !important;
-  overflow: hidden !important;
+.instructions-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+.instructions-box h3 { margin-top: 0; }
+.instructions-box ol { margin-bottom: 0; }
+
+.input-section {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+.input-section h4 {
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 10px;
+  margin-top: 0;
 }
 </style>
 ```
 
 ```{webr-r}
 #| context: setup
+#| include: false
 
 library(MASS)
 library(ggplot2)
@@ -44,9 +51,14 @@ library(dplyr)
 library(tidyr)
 library(scales)
 library(Matrix)
+library(base64enc)
 
 select <- dplyr::select
 filter <- dplyr::filter
+
+# ============================================================
+# SIMULATION ENGINE (hidden from user)
+# ============================================================
 
 crear_matriz_correlacion <- function(cor_inflacion_tc, cor_salario_inflacion, 
                                       cor_inmobiliario_bolsa, cor_alquiler_inflacion,
@@ -447,16 +459,13 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
 
 validar_parametros <- function(p) {
   errores <- c()
-  advertencias <- c()
-  
   if (p$tasa_ahorro_pct < 0 || p$tasa_ahorro_pct > 1) errores <- c(errores, "tasa_ahorro_pct debe estar entre 0 y 1")
   if (p$enganche_pct < 0 || p$enganche_pct > 1) errores <- c(errores, "enganche_pct debe estar entre 0 y 1")
   if (p$salario_mensual_inicial_usd <= 0) errores <- c(errores, "salario_mensual_inicial_usd debe ser positivo")
   if (p$valor_propiedad_usd <= 0) errores <- c(errores, "valor_propiedad_usd debe ser positivo")
   if (p$alquiler_mensual_inicial_usd <= 0) errores <- c(errores, "alquiler_mensual_inicial_usd debe ser positivo")
   if (p$plazo_anos <= 0 || p$plazo_anos > 40) errores <- c(errores, "plazo_anos debe estar entre 1 y 40")
-  
-  return(list(errores = errores, advertencias = advertencias))
+  return(list(errores = errores))
 }
 
 ejecutar_simulacion_completa <- function(p) {
@@ -489,158 +498,114 @@ ejecutar_simulacion_completa <- function(p) {
   do.call(rbind, resultados_lista)
 }
 
-message("Simulador cargado correctamente")
+message("✅ Motor de simulación cargado")
 ```
 
-## 📝 Complete sus Datos
+::: {.instructions-box}
+### 📋 Instrucciones
 
-Modifique los valores según su situación personal. Luego presione **"Run Code"** en cada sección.
+1. **Modifique los valores** en el bloque de abajo según su situación
+2. **Presione "Run Code"** una sola vez
+3. **Los resultados se abrirán en una nueva pestaña** con todos los gráficos y análisis
+:::
 
----
+## 📝 Configure sus Parámetros
 
-### 💰 Situación Financiera
-
-```{webr-r}
-#| label: inputs-personal
-#| autorun: true
-
-ahorros_actuales_usd <- 30000
-# Todos sus ahorros disponibles en USD (efectivo, plazo fijo, etc.)
-
-salario_mensual_inicial_usd <- 2333
-# Su ingreso mensual neto en USD (después de impuestos)
-
-tasa_ahorro_pct <- 0.50
-# Porcentaje del salario que destina a vivienda + ahorro (ej: 0.30 = 30%)
-# Este monto cubre: cuota/alquiler + ahorro adicional que pueda invertir
-```
-
-### 🏠 Propiedad a Comprar
+Edite los valores y luego presione **Run Code**:
 
 ```{webr-r}
-#| label: inputs-propiedad
-#| autorun: true
+#| label: configurar-y-ejecutar
 
-valor_propiedad_usd <- 120000
-# Precio de la propiedad que está considerando comprar
+# ══════════════════════════════════════════════════════════════
+#                    💰 SU SITUACIÓN FINANCIERA
+# ══════════════════════════════════════════════════════════════
 
-enganche_pct <- 0.25
-# Porcentaje del valor que pagaría de entrada (ej: 0.25 = 25%)
+ahorros_actuales_usd       <- 30000    # Total de ahorros disponibles en USD
+salario_mensual_usd        <- 2333     # Ingreso mensual neto en USD
+tasa_ahorro_pct            <- 0.50     # % del salario para vivienda+ahorro (0.30 = 30%)
 
-plazo_anos <- 25
-# Plazo del crédito hipotecario en años (típico: 15-30)
+# ══════════════════════════════════════════════════════════════
+#                    🏠 PROPIEDAD A COMPRAR
+# ══════════════════════════════════════════════════════════════
 
-tasa_real_uva_anual <- 0.06
-# Tasa de interés REAL del crédito UVA (sobre inflación). Ej: 0.05 = 5%
-```
+valor_propiedad_usd        <- 120000   # Precio de la propiedad
+enganche_pct               <- 0.25     # Porcentaje de entrada (0.25 = 25%)
+plazo_anos                 <- 25       # Plazo del crédito en años
+tasa_real_uva_anual        <- 0.06     # Tasa real del crédito UVA (0.06 = 6%)
 
-### 🔑 Alquiler Actual
+# ══════════════════════════════════════════════════════════════
+#                    🔑 ALQUILER ALTERNATIVO
+# ══════════════════════════════════════════════════════════════
 
-```{webr-r}
-#| label: inputs-alquiler
-#| autorun: true
+alquiler_mensual_usd       <- 437      # Alquiler mensual en USD
+deposito_meses             <- 3        # Meses de depósito requeridos
+comision_meses             <- 1        # Meses de comisión inmobiliaria
 
-alquiler_mensual_inicial_usd <- 437
-# Lo que paga (o pagaría) de alquiler mensual en USD
+# ══════════════════════════════════════════════════════════════
+#                    📍 UBICACIÓN Y MERCADO
+# ══════════════════════════════════════════════════════════════
 
-deposito_alquiler_meses <- 3
-# Meses de depósito que pide el propietario (típico: 1-3)
+ubicacion                  <- "CABA"   # "CABA" (3% aprec.) o "GBA" (1% aprec.)
+crecimiento_salario_anual  <- 0.08     # Crecimiento real esperado del salario
+rendimiento_inversiones    <- 0.07     # Rendimiento anual esperado (S&P500 ~7%)
 
-comision_inmobiliaria_alquiler <- 1
-# Meses de comisión de la inmobiliaria al firmar (típico: 1)
-```
+# ══════════════════════════════════════════════════════════════
+#                    ⚙️ CONFIGURACIÓN SIMULACIÓN
+# ══════════════════════════════════════════════════════════════
 
-### 📍 Ubicación
+n_simulaciones             <- 1000     # Cantidad de escenarios (más = más preciso)
 
-```{webr-r}
-#| label: inputs-ubicacion
-#| autorun: true
 
-ubicacion <- "CABA"
-# Opciones: "CABA" o "GBA"
-# CABA: Mayor apreciación histórica (3% anual)
-# GBA: Menor apreciación histórica (1% anual)
-```
+# ══════════════════════════════════════════════════════════════
+#     ▼▼▼ NO MODIFICAR DEBAJO DE ESTA LÍNEA ▼▼▼
+# ══════════════════════════════════════════════════════════════
 
-### 📊 Expectativas de Mercado (Opcional)
-
-```{webr-r}
-#| label: inputs-mercado
-#| autorun: true
-
-crecimiento_salario_anual_usd <- 0.08
-# Crecimiento real esperado de su salario en USD por año (ej: 0.03 = 3%)
-
-rendimiento_bolsa_base <- 0.07
-# Rendimiento anual esperado si invierte en bolsa/ETFs (histórico S&P500: 7%)
-
-n_simulaciones <- 1000
-# Cantidad de escenarios a simular (más = más preciso pero más lento)
-```
-
----
-
-## ▶️ Ejecutar Análisis
-
-Una vez completados sus datos arriba, presione **"Run Code"** para ejecutar la simulación.
-
-```{webr-r}
-#| label: ejecutar-todo
-#| edit: false
-
-# Validación
-if (!exists("ahorros_actuales_usd") || !exists("salario_mensual_inicial_usd") || 
-    !exists("valor_propiedad_usd") || !exists("alquiler_mensual_inicial_usd")) {
-  stop("Error: Ejecute primero todas las celdas de datos arriba.")
-}
-
-# Ajustar apreciación según ubicación
-apreciacion_propiedad_anual_usd <- if (exists("ubicacion") && ubicacion == "GBA") 0.01 else 0.03
+cat("🔄 Procesando simulación...\n\n")
 
 # Calcular valores derivados
+apreciacion_propiedad <- if (ubicacion == "GBA") 0.01 else 0.03
 meses_totales <- plazo_anos * 12
-monto_credito_usd <- valor_propiedad_usd * (1 - enganche_pct)
-enganche_usd <- valor_propiedad_usd * enganche_pct
-gastos_escritura_pct <- 0.10
-costo_total_compra <- enganche_usd + (valor_propiedad_usd * gastos_escritura_pct)
-ahorros_excedentes_usd <- max(0, ahorros_actuales_usd - costo_total_compra)
-inversion_inicial_alquiler <- ahorros_actuales_usd
+monto_credito <- valor_propiedad_usd * (1 - enganche_pct)
+enganche <- valor_propiedad_usd * enganche_pct
+gastos_escritura <- valor_propiedad_usd * 0.10
+costo_total_compra <- enganche + gastos_escritura
+ahorros_excedentes <- max(0, ahorros_actuales_usd - costo_total_compra)
 
-# Construir parámetros
+# Construir parámetros completos
 params <- list(
   ahorros_actuales_usd = ahorros_actuales_usd,
-  salario_mensual_inicial_usd = salario_mensual_inicial_usd,
+  salario_mensual_inicial_usd = salario_mensual_usd,
   tasa_ahorro_pct = tasa_ahorro_pct,
   valor_propiedad_usd = valor_propiedad_usd,
   enganche_pct = enganche_pct,
-  enganche_usd = enganche_usd,
-  monto_credito_usd = monto_credito_usd,
+  enganche_usd = enganche,
+  monto_credito_usd = monto_credito,
   costo_total_compra = costo_total_compra,
-  ahorros_excedentes_usd = ahorros_excedentes_usd,
+  ahorros_excedentes_usd = ahorros_excedentes,
   plazo_anos = plazo_anos,
   meses_totales = meses_totales,
   tasa_real_uva_anual = tasa_real_uva_anual,
-  gastos_escritura_pct = gastos_escritura_pct,
+  gastos_escritura_pct = 0.10,
   costos_venta_pct = 0.06,
   costo_mantenimiento_anual_pct = 0.02,
   impuesto_inmobiliario_anual = 0.01,
   seguro_hogar_anual_pct = 0.003,
-  alquiler_mensual_inicial_usd = alquiler_mensual_inicial_usd,
-  deposito_alquiler_meses = deposito_alquiler_meses,
-  comision_inmobiliaria_alquiler = comision_inmobiliaria_alquiler,
-  inversion_inicial_alquiler = inversion_inicial_alquiler,
+  alquiler_mensual_inicial_usd = alquiler_mensual_usd,
+  deposito_alquiler_meses = deposito_meses,
+  comision_inmobiliaria_alquiler = comision_meses,
+  inversion_inicial_alquiler = ahorros_actuales_usd,
   duracion_contrato_anos = 2,
   inflacion_mensual_ars_base = 0.04,
   inflacion_volatilidad_mensual = 0.02,
   desviacion_ppp_anual = 0.00,
   desviacion_ppp_volatilidad = 0.05,
-  crecimiento_salario_anual_usd = crecimiento_salario_anual_usd,
+  crecimiento_salario_anual_usd = crecimiento_salario_anual,
   salario_volatilidad_anual = 0.03,
-  apreciacion_propiedad_anual_usd = apreciacion_propiedad_anual_usd,
+  apreciacion_propiedad_anual_usd = apreciacion_propiedad,
   apreciacion_volatilidad_anual = 0.08,
   alquiler_crecimiento_real_anual = 0.01,
   alquiler_volatilidad_anual = 0.05,
-  rendimiento_bolsa_base = rendimiento_bolsa_base,
+  rendimiento_bolsa_base = rendimiento_inversiones,
   volatilidad_bolsa = 0.15,
   tasa_libre_riesgo_anual = 0.02,
   cor_inflacion_tc = 0.80,
@@ -697,28 +662,21 @@ params <- list(
 # Validar
 validacion <- validar_parametros(params)
 if (length(validacion$errores) > 0) {
-  for (e in validacion$errores) cat("Error:", e, "\n")
+  for (e in validacion$errores) cat("❌ Error:", e, "\n")
   stop("Corrija los errores antes de continuar.")
 }
 
-# Advertencia si no alcanzan los ahorros
-if (ahorros_actuales_usd < costo_total_compra) {
-  cat(sprintf("Nota: Sus ahorros ($%s) son menores al costo de compra ($%s).\n",
-              format(ahorros_actuales_usd, big.mark=","),
-              format(round(costo_total_compra), big.mark=",")))
-  cat("El análisis asume que conseguiría el faltante.\n\n")
-}
+cat(sprintf("📊 Simulando %d escenarios para %d años...\n", n_simulaciones, plazo_anos))
 
-cat("Ejecutando simulación Monte Carlo...\n")
-cat(sprintf("Procesando %d escenarios para %d años...\n\n", n_simulaciones, plazo_anos))
-
-# Ejecutar
-resultados <<- ejecutar_simulacion_completa(params)
-params_global <<- params
 # Ejecutar simulación
 resultados <- ejecutar_simulacion_completa(params)
 
-# Calcular estadísticas
+cat("📈 Generando gráficos...\n")
+
+# ══════════════════════════════════════════════════════════════
+#                    CALCULAR ESTADÍSTICAS
+# ══════════════════════════════════════════════════════════════
+
 resultados_final <- resultados %>%
   filter(año == params$plazo_anos) %>%
   mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
@@ -728,37 +686,6 @@ final_alquiler <- resultados_final$patrimonio[resultados_final$tipo_clean == "Al
 prob_compra_gana <- mean(final_compra > final_alquiler, na.rm = TRUE)
 diferencia_media <- mean(final_compra - final_alquiler, na.rm = TRUE)
 
-cat("==========================================\n")
-cat("              RESULTADO\n")
-cat("==========================================\n\n")
-
-if (prob_compra_gana > 0.6) {
-  cat(sprintf("COMPRAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("(gana en %.0f%% de los escenarios simulados)\n", prob_compra_gana * 100))
-} else if (prob_compra_gana < 0.4) {
-  cat(sprintf("ALQUILAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-  cat(sprintf("(gana en %.0f%% de los escenarios simulados)\n", (1-prob_compra_gana) * 100))
-} else {
-  cat("Ambas opciones son SIMILARES en resultado esperado\n")
-  cat(sprintf("Compra gana en %.0f%% de escenarios, Alquiler en %.0f%%\n", 
-              prob_compra_gana * 100, (1-prob_compra_gana) * 100))
-}
-
-cat("\n==========================================\n\n")
-
-cat("Su configuración:\n")
-cat(sprintf("  Ahorros: $%s | Salario: $%s/mes\n", 
-            format(ahorros_actuales_usd, big.mark=","),
-            format(salario_mensual_inicial_usd, big.mark=",")))
-cat(sprintf("  Propiedad: $%s | Crédito: $%s a %d años\n",
-            format(valor_propiedad_usd, big.mark=","),
-            format(monto_credito_usd, big.mark=","),
-            plazo_anos))
-cat(sprintf("  Alquiler: $%s/mes | Ubicación: %s\n\n",
-            format(alquiler_mensual_inicial_usd, big.mark=","),
-            ubicacion))
-
-# Estadísticas detalladas
 stats_finales <- resultados_final %>%
   group_by(tipo_clean) %>%
   summarise(
@@ -770,31 +697,6 @@ stats_finales <- resultados_final %>%
     .groups = "drop"
   )
 
-cat(sprintf("Patrimonio estimado en %d años:\n\n", plazo_anos))
-
-for (tipo in c("Compra", "Alquiler")) {
-  s <- stats_finales %>% filter(tipo_clean == tipo)
-  emoji <- if(tipo == "Compra") "🏠" else "🔑"
-  cat(sprintf("%s %s:\n", emoji, tipo))
-  cat(sprintf("   Promedio: $%s USD\n", format(round(s$media), big.mark=",")))
-  cat(sprintf("   Rango probable (80%%): $%s a $%s USD\n", 
-              format(round(s$q10), big.mark=","),
-              format(round(s$q90), big.mark=",")))
-  cat(sprintf("   Peor escenario (5%%): $%s USD\n\n", format(round(s$peor_5pct), big.mark=",")))
-}
-```
-
----
-
-## 📊 Gráficos
-
-### Evolución del Patrimonio
-
-```{webr-r}
-#| label: grafico-evolucion
-#| edit: false
-
-p <- params_global
 patrimonio_por_año <- resultados %>%
   group_by(año, tipo) %>%
   summarise(
@@ -808,114 +710,353 @@ patrimonio_por_año <- resultados %>%
   ) %>%
   mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
 
-ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
-  geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
-  geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
-  geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
-  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_y_continuous(labels = label_dollar(scale = 1, suffix = "K")) +
-  labs(
-    title = "Evolución del Patrimonio",
-    subtitle = "Línea: mediana | Banda oscura: 50% de casos | Banda clara: 80% de casos",
-    x = "Años", y = "Patrimonio (miles USD)",
-    color = "Estrategia", fill = "Estrategia"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
-```
-
-### Distribución del Resultado Final
-
-```{webr-r}
-#| label: grafico-distribucion
-#| edit: false
-p <- params_global
-
-resultados_final <- resultados %>%
-  filter(año == p$plazo_anos) %>%
-  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-
-stats_media <- resultados_final %>% 
-  group_by(tipo_clean) %>% 
-  summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
-
-ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
-  geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
-  geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean),
-             linetype = "dashed", linewidth = 1) +
-  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-  labs(
-    title = sprintf("Distribución del Patrimonio Final (%d años)", p$plazo_anos),
-    subtitle = "Líneas punteadas = promedio de cada estrategia",
-    x = "Patrimonio Final (miles USD)", y = "Frecuencia",
-    fill = "Estrategia", color = "Promedio"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
-```
-
-### Diferencia Compra - Alquiler
-
-```{webr-r}
-#| label: grafico-diferencia
-#| edit: false
-
-p <- params_global
-
-resultados_final <- resultados %>%
-  filter(año == p$plazo_anos) %>%
-  mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
-
 diferencias <- resultados_final %>%
   dplyr::select(simulacion, tipo_clean, patrimonio) %>%
   pivot_wider(names_from = tipo_clean, values_from = patrimonio) %>%
   mutate(diferencia = Compra - Alquiler)
 
+# ══════════════════════════════════════════════════════════════
+#                    GENERAR GRÁFICOS
+# ══════════════════════════════════════════════════════════════
+
+# Gráfico 1: Evolución
+g1 <- ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
+  geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
+  geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
+  geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
+  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_y_continuous(labels = scales::label_dollar(scale = 1, suffix = "K")) +
+  labs(title = "Evolución del Patrimonio en el Tiempo",
+       subtitle = "Línea: mediana | Banda oscura: 50% casos | Banda clara: 80% casos",
+       x = "Años", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 16))
+
+# Gráfico 2: Distribución
+stats_media <- resultados_final %>% 
+  group_by(tipo_clean) %>% 
+  summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
+
+g2 <- ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
+  geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
+  geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean),
+             linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+  labs(title = sprintf("Distribución del Patrimonio Final (%d años)", params$plazo_anos),
+       subtitle = "Líneas punteadas = promedio de cada estrategia",
+       x = "Patrimonio Final (miles USD)", y = "Frecuencia",
+       fill = "Estrategia", color = "Promedio") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 16))
+
+# Gráfico 3: Diferencia
 media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
 pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
 
-ggplot(diferencias, aes(x = diferencia / 1000)) +
+g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
   geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
   geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
   geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
   annotate("label", x = media_dif / 1000, y = Inf, vjust = 1.5,
            label = sprintf("Promedio: $%.0fK", media_dif / 1000),
            fill = "white", color = "blue", size = 4) +
-  labs(
-    title = "Diferencia de Patrimonio: Compra - Alquiler",
-    subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", 
-                       pct_compra_mejor, 100-pct_compra_mejor),
-    x = "Diferencia (miles USD)", y = "Frecuencia"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(plot.title = element_text(face = "bold"))
+  labs(title = "Diferencia: Compra - Alquiler",
+       subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", 
+                          pct_compra_mejor, 100-pct_compra_mejor),
+       x = "Diferencia (miles USD)", y = "Frecuencia") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold", size = 16))
 
-cat("\n✅ Análisis completado\n")
+# ══════════════════════════════════════════════════════════════
+#                    GUARDAR GRÁFICOS COMO PNG
+# ══════════════════════════════════════════════════════════════
+
+ggsave("/tmp/plot1.png", g1, width = 10, height = 6, dpi = 100, bg = "white")
+ggsave("/tmp/plot2.png", g2, width = 10, height = 6, dpi = 100, bg = "white")
+ggsave("/tmp/plot3.png", g3, width = 10, height = 6, dpi = 100, bg = "white")
+
+img1_b64 <- base64enc::base64encode("/tmp/plot1.png")
+img2_b64 <- base64enc::base64encode("/tmp/plot2.png")
+img3_b64 <- base64enc::base64encode("/tmp/plot3.png")
+
+# ══════════════════════════════════════════════════════════════
+#                    CONSTRUIR HTML DEL REPORTE
+# ══════════════════════════════════════════════════════════════
+
+# Determinar recomendación
+if (prob_compra_gana > 0.6) {
+  recomendacion <- sprintf('<div class="result-box compra"><h2>🏠 COMPRAR es la mejor opción</h2><p>Genera aproximadamente <strong>$%s USD más</strong> en promedio<br>Gana en <strong>%.0f%%</strong> de los escenarios simulados</p></div>',
+                           format(round(abs(diferencia_media)), big.mark=","), prob_compra_gana * 100)
+} else if (prob_compra_gana < 0.4) {
+  recomendacion <- sprintf('<div class="result-box alquiler"><h2>🔑 ALQUILAR es la mejor opción</h2><p>Genera aproximadamente <strong>$%s USD más</strong> en promedio<br>Gana en <strong>%.0f%%</strong> de los escenarios simulados</p></div>',
+                           format(round(abs(diferencia_media)), big.mark=","), (1-prob_compra_gana) * 100)
+} else {
+  recomendacion <- sprintf('<div class="result-box neutral"><h2>⚖️ Ambas opciones son similares</h2><p>Compra gana en <strong>%.0f%%</strong> de escenarios<br>Alquiler gana en <strong>%.0f%%</strong> de escenarios</p></div>',
+                           prob_compra_gana * 100, (1-prob_compra_gana) * 100)
+}
+
+# Stats para tabla
+s_compra <- stats_finales %>% filter(tipo_clean == "Compra")
+s_alquiler <- stats_finales %>% filter(tipo_clean == "Alquiler")
+
+html_content <- sprintf('
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados - Simulador Vivienda Argentina</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%%, #c3cfe2 100%%);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { 
+      text-align: center; 
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 2.2em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+    }
+    .result-box {
+      padding: 25px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .result-box.compra { background: linear-gradient(135deg, #2E86C1 0%%, #1a5276 100%%); color: white; }
+    .result-box.alquiler { background: linear-gradient(135deg, #E67E22 0%%, #d35400 100%%); color: white; }
+    .result-box.neutral { background: linear-gradient(135deg, #27ae60 0%%, #1e8449 100%%); color: white; }
+    .result-box h2 { margin-bottom: 10px; font-size: 1.8em; }
+    .result-box p { font-size: 1.15em; opacity: 0.95; }
+    
+    .config-summary {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .config-summary h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+    .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .config-item { background: #f8f9fa; padding: 12px; border-radius: 8px; }
+    .config-item .label { color: #7f8c8d; font-size: 0.85em; }
+    .config-item .value { color: #2c3e50; font-weight: 600; font-size: 1.1em; }
+    
+    .stats-table {
+      width: 100%%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+    .stats-table th, .stats-table td { padding: 15px; text-align: center; }
+    .stats-table th { background: #34495e; color: white; font-weight: 600; }
+    .stats-table tr:nth-child(even) { background: #f8f9fa; }
+    .stats-table td:first-child { font-weight: 600; text-align: left; padding-left: 20px; }
+    
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .chart-container img { width: 100%%; height: auto; border-radius: 8px; }
+    .chart-container h3 { color: #34495e; margin-bottom: 15px; }
+    
+    .disclaimer {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #856404;
+    }
+    
+    .footer {
+      text-align: center;
+      color: #95a5a6;
+      margin-top: 30px;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏠 Resultados del Análisis</h1>
+    <p class="subtitle">Simulación Monte Carlo: Compra vs Alquiler en Argentina</p>
+    
+    %s
+    
+    <div class="config-summary">
+      <h3>📋 Su Configuración</h3>
+      <div class="config-grid">
+        <div class="config-item">
+          <div class="label">Ahorros actuales</div>
+          <div class="value">$%s USD</div>
+        </div>
+        <div class="config-item">
+          <div class="label">Salario mensual</div>
+          <div class="value">$%s USD</div>
+        </div>
+        <div class="config-item">
+          <div class="label">Valor propiedad</div>
+          <div class="value">$%s USD</div>
+        </div>
+        <div class="config-item">
+          <div class="label">Crédito UVA</div>
+          <div class="value">$%s a %d años</div>
+        </div>
+        <div class="config-item">
+          <div class="label">Alquiler mensual</div>
+          <div class="value">$%s USD</div>
+        </div>
+        <div class="config-item">
+          <div class="label">Ubicación</div>
+          <div class="value">%s</div>
+        </div>
+      </div>
+    </div>
+    
+    <table class="stats-table">
+      <tr>
+        <th>Métrica</th>
+        <th>🏠 Compra</th>
+        <th>🔑 Alquiler</th>
+      </tr>
+      <tr>
+        <td>Patrimonio promedio</td>
+        <td>$%s USD</td>
+        <td>$%s USD</td>
+      </tr>
+      <tr>
+        <td>Patrimonio mediano</td>
+        <td>$%s USD</td>
+        <td>$%s USD</td>
+      </tr>
+      <tr>
+        <td>Rango probable (80%%)</td>
+        <td>$%s - $%s</td>
+        <td>$%s - $%s</td>
+      </tr>
+      <tr>
+        <td>Peor escenario (5%%)</td>
+        <td>$%s USD</td>
+        <td>$%s USD</td>
+      </tr>
+    </table>
+    
+    <div class="chart-container">
+      <h3>📈 Evolución del Patrimonio</h3>
+      <img src="data:image/png;base64,%s" alt="Evolución del patrimonio">
+    </div>
+    
+    <div class="chart-container">
+      <h3>📊 Distribución del Resultado Final</h3>
+      <img src="data:image/png;base64,%s" alt="Distribución">
+    </div>
+    
+    <div class="chart-container">
+      <h3>⚖️ Diferencia Compra - Alquiler</h3>
+      <img src="data:image/png;base64,%s" alt="Diferencia">
+    </div>
+    
+    <div class="disclaimer">
+      <strong>⚠️ Disclaimer:</strong> Este análisis es una herramienta de apoyo basada en simulaciones Monte Carlo con %d escenarios. 
+      Los resultados dependen de supuestos que pueden no cumplirse. No constituye asesoramiento financiero. 
+      Consulte con un profesional antes de tomar decisiones.
+    </div>
+    
+    <p class="footer">
+      Generado el %s | Simulador de Vivienda Argentina
+    </p>
+  </div>
+</body>
+</html>',
+  recomendacion,
+  format(ahorros_actuales_usd, big.mark=","),
+  format(salario_mensual_usd, big.mark=","),
+  format(valor_propiedad_usd, big.mark=","),
+  format(round(monto_credito), big.mark=","), plazo_anos,
+  format(alquiler_mensual_usd, big.mark=","),
+  ubicacion,
+  format(round(s_compra$media), big.mark=","),
+  format(round(s_alquiler$media), big.mark=","),
+  format(round(s_compra$mediana), big.mark=","),
+  format(round(s_alquiler$mediana), big.mark=","),
+  format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=","),
+  format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=","),
+  format(round(s_compra$peor_5pct), big.mark=","),
+  format(round(s_alquiler$peor_5pct), big.mark=","),
+  img1_b64, img2_b64, img3_b64,
+  n_simulaciones,
+  format(Sys.time(), "%d/%m/%Y %H:%M")
+)
+
+# ══════════════════════════════════════════════════════════════
+#                    ABRIR EN NUEVA PESTAÑA
+# ══════════════════════════════════════════════════════════════
+
+html_b64 <- base64enc::base64encode(charToRaw(html_content))
+data_uri <- paste0("data:text/html;base64,", html_b64)
+
+cat("\n✅ ¡Simulación completada!\n\n")
+cat("═══════════════════════════════════════════════════════════\n")
+cat("          📊 RESULTADOS LISTOS\n")
+cat("═══════════════════════════════════════════════════════════\n\n")
+
+if (prob_compra_gana > 0.6) {
+  cat(sprintf("🏠 COMPRAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+  cat(sprintf("   Gana en %.0f%% de los escenarios\n\n", prob_compra_gana * 100))
+} else if (prob_compra_gana < 0.4) {
+  cat(sprintf("🔑 ALQUILAR genera ~$%s USD más en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
+  cat(sprintf("   Gana en %.0f%% de los escenarios\n\n", (1-prob_compra_gana) * 100))
+} else {
+  cat("⚖️ Ambas opciones son SIMILARES\n\n")
+}
+
+cat("👉 Haga clic en el enlace de abajo para ver el reporte completo:\n\n")
+
+# Create clickable link using htmltools
+htmltools::browsable(htmltools::tags$a(
+  href = data_uri,
+  target = "_blank",
+  style = "display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;",
+  "🔗 ABRIR REPORTE COMPLETO EN NUEVA PESTAÑA"
+))
 ```
 
 ---
 
-## ℹ️ Acerca del Modelo
-
 ::: {.callout-note collapse="true"}
-## ¿Qué incluye esta simulación? (click para expandir)
+## ℹ️ ¿Qué incluye esta simulación? (click para expandir)
 
-**Crédito UVA:** Cuota que ajusta por inflación argentina, tasa real configurable, sistema francés.
+**Crédito UVA:** Cuota que ajusta por inflación argentina, sistema francés con tasa real configurable.
 
-**Crisis Argentinas:** 8% probabilidad anual, con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración ~18 meses.
+**Crisis Argentinas:** 8% probabilidad anual de crisis con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración promedio de 18 meses.
 
 **Eventos de Vida:** Pérdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovación de alquiler.
 
-**Inversiones:** Quien alquila invierte en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de pánico en caídas.
+**Inversiones:** Quien alquila invierte el capital en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de pánico en caídas.
 
 **Impuestos:** ITI, Bienes Personales, ganancias de capital. Exención por vivienda única.
 
-**Ubicación:** CABA asume 3% apreciación anual, GBA asume 1%.
-:::
-
-::: {.callout-warning}
-## ⚠️ Disclaimer
-Este análisis es una herramienta de apoyo, no asesoramiento financiero. Los resultados son simulaciones basadas en supuestos que pueden no cumplirse. **Consulte con un profesional.**
+**Ubicación:** CABA asume 3% apreciación anual en USD, GBA asume 1%.
 :::
