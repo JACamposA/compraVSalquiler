@@ -1,30 +1,9 @@
 [
   {
-    "objectID": "index.html#complete-sus-datos",
-    "href": "index.html#complete-sus-datos",
-    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "📝 Complete sus Datos",
-    "text": "📝 Complete sus Datos\nModifique los valores según su situación personal. Luego presione “Run Code” en cada sección.\n\n\n💰 Situación Financiera\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🏠 Propiedad a Comprar\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n🔑 Alquiler Actual\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📍 Ubicación\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n📊 Expectativas de Mercado (Opcional)\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
-  },
-  {
-    "objectID": "index.html#ejecutar-análisis",
-    "href": "index.html#ejecutar-análisis",
-    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "▶️ Ejecutar Análisis",
-    "text": "▶️ Ejecutar Análisis\nUna vez completados sus datos arriba, presione “Run Code” para ejecutar la simulación.\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
-  },
-  {
-    "objectID": "index.html#gráficos",
-    "href": "index.html#gráficos",
-    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "📊 Gráficos",
-    "text": "📊 Gráficos\n\nEvolución del Patrimonio\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\nDistribución del Resultado Final\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\nDiferencia Compra - Alquiler\n\nPlease enable JavaScript to experience the dynamic code cell content on this page."
-  },
-  {
-    "objectID": "index.html#ℹ-acerca-del-modelo",
-    "href": "index.html#ℹ-acerca-del-modelo",
-    "title": "🏠 Simulador de Vivienda Argentina: Compra vs Alquiler",
-    "section": "ℹ️ Acerca del Modelo",
-    "text": "ℹ️ Acerca del Modelo\n\n\n\n\n\n\nNote¿Qué incluye esta simulación? (click para expandir)\n\n\n\n\n\nCrédito UVA: Cuota que ajusta por inflación argentina, tasa real configurable, sistema francés.\nCrisis Argentinas: 8% probabilidad anual, con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración ~18 meses.\nEventos de Vida: Pérdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovación de alquiler.\nInversiones: Quien alquila invierte en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de pánico en caídas.\nImpuestos: ITI, Bienes Personales, ganancias de capital. Exención por vivienda única.\nUbicación: CABA asume 3% apreciación anual, GBA asume 1%.\n\n\n\n\n\n\n\n\n\nWarning⚠️ Disclaimer\n\n\n\nEste análisis es una herramienta de apoyo, no asesoramiento financiero. Los resultados son simulaciones basadas en supuestos que pueden no cumplirse. Consulte con un profesional."
+    "objectID": "index.html#configure-sus-parámetros",
+    "href": "index.html#configure-sus-parámetros",
+    "title": "🏠 Simulador de Vivienda Argentina",
+    "section": "📝 Configure sus Parámetros",
+    "text": "📝 Configure sus Parámetros\nEdite los valores y luego presione Run Code:\n\nPlease enable JavaScript to experience the dynamic code cell content on this page.\n\n\n\n\n\n\n\nNoteℹ️ ¿Qué incluye esta simulación? (click para expandir)\n\n\n\n\n\nCrédito UVA: Cuota que ajusta por inflación argentina, sistema francés con tasa real configurable.\nCrisis Argentinas: 8% probabilidad anual de crisis con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración promedio de 18 meses.\nEventos de Vida: Pérdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovación de alquiler.\nInversiones: Quien alquila invierte el capital en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de pánico en caídas.\nImpuestos: ITI, Bienes Personales, ganancias de capital. Exención por vivienda única.\nUbicación: CABA asume 3% apreciación anual en USD, GBA asume 1%."
   }
 ]
