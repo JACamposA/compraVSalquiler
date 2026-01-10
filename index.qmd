@@ -12,11 +12,6 @@ webr:
   packages: ['MASS', 'ggplot2', 'dplyr', 'tidyr', 'scales', 'Matrix']
   autoload-packages: true
 ---
-<style>
-.quarto-container {
-    max-width: 85% !important; /* Adjust percentage as needed */
-}
-</style>
 
 ```{webr-r}
 #| context: setup
@@ -574,18 +569,16 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
 message("Motor de simulacion cargado")
 ```
 
-## Configure sus Parametros y Ejecute
-
-Edite los valores y luego presione **Run Code**:
+## Edite los valores y luego presione **Run Code**:
 
 ```{webr-r}
 # ============================================================
-#                    SUS DATOS
+#        INGRESE SUS DATOS (Solo modifique los números)
 # ============================================================
 
 ahorros_actuales_usd       <- 30000    # Total ahorros en USD
 salario_mensual_usd        <- 2333     # Ingreso mensual neto en USD
-tasa_ahorro_pct            <- 0.50     # % del salario disponible para para vivienda+ahorro
+tasa_ahorro_pct            <- 0.50     # % del salario disponible para  vivienda + ahorro
 
 valor_propiedad_usd        <- 120000   # Precio de la propiedad
 enganche_pct               <- 0.20     # Porcentaje de entrada al crédito UVA (0.25 = 25%)
@@ -600,7 +593,7 @@ ubicacion                  <- "GBA"   # "CABA" o "GBA"
 crecimiento_salario_anual  <- 0.08     # Crecimiento real del salario
 rendimiento_inversiones    <- 0.07     # Rendimiento esperado inversiones
 
-n_simulaciones             <- 250     # Cantidad de escenarios (1 - 1000, más da mayor precisión pero tarda más)
+n_simulaciones             <- 500     # Cantidad de escenarios (1 - 1000, más da mayor precisión pero tarda más)
 
 # ============================================================
 #                    EJECUTAR
