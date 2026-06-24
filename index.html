@@ -2076,6 +2076,27 @@ Calcular
     ].join("\n");
   }
 
+  // The R console output lands as one big HTML blob (lines joined by <br>)
+  // inside #sim-app .qwebr-output-code-area pre. Reclassify each line as a
+  // heading / divider / plain line so it can be styled like the rest of the page.
+  function beautifyOutput() {
+    const area = document.querySelector("#sim-app .qwebr-output-code-area");
+    if (!area) return;
+    const target = area.querySelector("pre > div") || area.querySelector("pre");
+    if (!target) return;
+
+    const lines = target.innerHTML.split(/<br\s*\/?>/i);
+    target.innerHTML = lines.map(function (line) {
+      const text = line.replace(/<[^>]*>/g, "").trim();
+      if (/^=+$/.test(text)) return '<div class="rs-rule rs-rule-strong"></div>';
+      if (/^-+$/.test(text)) return '<div class="rs-rule"></div>';
+      if (text && /[A-ZÁÉÍÓÚÑ]/.test(text) && text === text.toUpperCase()) {
+        return '<div class="rs-heading">' + line + "</div>";
+      }
+      return '<div class="rs-line">' + line + "</div>";
+    }).join("");
+  }
+
   // quarto-webr renders each interactive chunk with a Monaco editor instance
   // stored in window.qwebrEditorInstances[id], and exposes a single global
   // qwebrExecuteCode(code, id, options) used by its own Run Code button.
@@ -2111,6 +2132,7 @@ Calcular
 
     try {
       await window.qwebrExecuteCode(code, entry.id, entry.editor.__qwebrOptions);
+      beautifyOutput();
       status.textContent = "Resultados generados.";
     } catch (e) {
       status.textContent = "Ocurrio un error al calcular. Revisa 'Motor de simulacion'.";
