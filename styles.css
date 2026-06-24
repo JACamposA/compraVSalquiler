@@ -287,13 +287,21 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   margin: 0.9rem 0;
 }
 
-#sim-app .qwebr-output-graph-area img,
-#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image {
+#sim-app .qwebr-output-graph-area img {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin: 0.8rem 0 1.6rem 0;
   background: var(--card);
   padding: 0.8rem;
+}
+
+#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 0.8rem 0 1.6rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
 }
 
 #sim-app .qwebr-output-graph-area figure.qwebr-canvas-image canvas {
@@ -304,7 +312,7 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
 
 #sim-app .qwebr-output-graph-area figcaption {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: #8d96a8;
   text-align: center;
   margin-top: 0.4rem;
 }

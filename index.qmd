@@ -425,6 +425,28 @@ construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_aho
 }
 
 # ============================================================
+# PLOT THEME: matches the dark console UI the cards are rendered in
+# ============================================================
+tema_oscuro <- function(base_size = 12) {
+  theme_minimal(base_size = base_size) %+replace%
+    theme(
+      plot.background = element_rect(fill = "#11151c", colour = NA),
+      panel.background = element_rect(fill = "#11151c", colour = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      legend.key = element_rect(fill = NA, colour = NA),
+      panel.grid.major = element_line(colour = "#FFFFFF1A", linewidth = 0.4),
+      panel.grid.minor = element_line(colour = "#FFFFFF0D", linewidth = 0.3),
+      text = element_text(colour = "#e8edf5"),
+      plot.title = element_text(colour = "#ffffff", face = "bold", size = rel(1.15), hjust = 0, margin = margin(b = 4)),
+      plot.subtitle = element_text(colour = "#c4ccd9", size = rel(0.85), hjust = 0, margin = margin(b = 10)),
+      axis.text = element_text(colour = "#c4ccd9"),
+      axis.title = element_text(colour = "#e8edf5"),
+      legend.text = element_text(colour = "#e8edf5"),
+      legend.title = element_text(colour = "#e8edf5")
+    )
+}
+
+# ============================================================
 # MAIN FUNCTION: Run simulation and display results
 # ============================================================
 ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
@@ -524,10 +546,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     s_alquiler$media, s_alquiler$q10, s_alquiler$q90, s_alquiler$peor_5pct
   ))
 
-  cat("================================================================\n")
-  cat("                       GRÁFICOS\n")
-  cat("================================================================\n\n")
-  
+  cat(sprintf("@@SECCION@@texto=Gráficos@@\n"))
+
   # Prepare data for plots
   patrimonio_por_año <- resultados %>%
     group_by(año, tipo) %>%
@@ -547,40 +567,38 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
     geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
     geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
-    scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-    scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    scale_color_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
+    scale_fill_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
     scale_y_continuous(labels = scales::label_dollar(suffix = "K")) +
     labs(title = "Evolución del Patrimonio", subtitle = "Línea: mediana | Banda oscura: 50% | Banda clara: 80%",
          x = "Años", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
-    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+    tema_oscuro(12) + theme(legend.position = "bottom")
   print(g1)
-  
+
   # Plot 2
   stats_media <- resultados_final %>% group_by(tipo_clean) %>% summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
   g2 <- ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
-    geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
+    geom_histogram(alpha = 0.7, bins = 40, position = "identity") +
     geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean), linetype = "dashed", linewidth = 1) +
-    scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-    scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
+    scale_fill_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
+    scale_color_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
     labs(title = sprintf("Distribución del Patrimonio Final (%d años)", plazo_anos), subtitle = "Líneas punteadas = promedio",
          x = "Patrimonio Final (miles USD)", y = "Frecuencia", fill = "Estrategia", color = "Promedio") +
-    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+    tema_oscuro(12) + theme(legend.position = "bottom")
   print(g2)
-  
+
   # Plot 3
   media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
   pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
   g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
-    geom_histogram(fill = "#27AE60", alpha = 0.7, bins = 40) +
-    geom_vline(xintercept = 0, linetype = "solid", color = "red", linewidth = 1.2) +
-    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "blue", linewidth = 1) +
+    geom_histogram(fill = "#6c5ce7", alpha = 0.8, bins = 40) +
+    geom_vline(xintercept = 0, linetype = "solid", color = "#ff6b6b", linewidth = 1.2) +
+    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "#7fc1ec", linewidth = 1) +
     labs(title = "Diferencia: Compra - Alquiler",
          subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", pct_compra_mejor, 100-pct_compra_mejor),
          x = "Diferencia (miles USD)", y = "Frecuencia") +
-    theme_minimal(base_size = 12)
+    tema_oscuro(12)
   print(g3)
-  
-  cat("\nAnálisis completado\n")
 }
 
 message("Motor de simulación cargado")
@@ -908,11 +926,16 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     );
   }
 
+  function renderSeccionCard(f) {
+    return '<div class="rs-section-label">' + f.texto + "</div>";
+  }
+
   const CARD_RENDERERS = {
     RESUMEN: renderResumenCard,
     RECOMENDACION: renderRecomendacionCard,
     CONFIGURACION: renderConfiguracionCard,
-    PATRIMONIO: renderPatrimonioCard
+    PATRIMONIO: renderPatrimonioCard,
+    SECCION: renderSeccionCard
   };
 
   function escapeHtml(text) {
