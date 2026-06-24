@@ -287,12 +287,26 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   margin: 0.9rem 0;
 }
 
-#sim-app .qwebr-output-graph-area img {
+#sim-app .qwebr-output-graph-area img,
+#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin: 0.8rem 0 1.6rem 0;
   background: var(--card);
   padding: 0.8rem;
+}
+
+#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image canvas {
+  display: block;
+  border-radius: calc(var(--radius) - 0.6rem);
+  max-width: 100%;
+}
+
+#sim-app .qwebr-output-graph-area figcaption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.4rem;
 }
 
 /* ---------------- Result cards (rendered inside the dark console area) ---------------- */
