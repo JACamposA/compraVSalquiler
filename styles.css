@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --ink: #1a1f2b;
+  --muted: #6b7280;
+  --accent: #2e86c1;
+  --accent-2: #27ae60;
+  --accent-grad: linear-gradient(135deg, #2e86c1 0%, #6c5ce7 100%);
+  --border: #e6e9f0;
+  --shadow: 0 10px 30px -12px rgba(26, 31, 43, 0.18);
+  --radius: 18px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#quarto-content > * {
+  max-width: 980px;
+}
+
+/* ---------------- Hero ---------------- */
+.app-hero {
+  background: var(--accent-grad);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 2.6rem 2.2rem;
+  margin-bottom: 1.8rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.18), transparent 60%);
+}
+
+.app-hero h1 {
+  font-weight: 800;
+  font-size: 2rem;
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.02em;
+}
+
+.app-hero p {
+  margin: 0;
+  opacity: 0.92;
+  font-size: 1.05rem;
+}
+
+title-block-header,
+.quarto-title-block {
+  display: none !important;
+}
+
+/* ---------------- Cards / panels ---------------- */
+.app-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.6rem;
+  box-shadow: var(--shadow);
+}
+
+.app-card h2, .app-card h3 {
+  margin-top: 0;
+  font-weight: 700;
+}
+
+.app-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 1.1rem;
+}
+
+.app-section-title .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  display: inline-block;
+}
+
+/* ---------------- Slider form ---------------- */
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.4rem 1.8rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.slider-group label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.slider-group .hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.slider-value {
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(46, 134, 193, 0.1);
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #e2e6ef var(--fill, 50%), #e2e6ef 100%);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+
+select.app-select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #fafbfd;
+}
+
+/* ---------------- Run button ---------------- */
+.run-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.8rem;
+}
+
+#btn-calcular {
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.85rem 2.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -6px rgba(46, 134, 193, 0.55);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+#btn-calcular:hover { transform: translateY(-1px); }
+#btn-calcular:disabled { opacity: 0.6; cursor: progress; transform: none; }
+
+.run-status {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ---------------- Hide the underlying engine chunk ---------------- */
+#sim-app {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  background: #fafbfd;
+  margin-top: 0.4rem;
+}
+
+#sim-app summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ---------------- Output styling ---------------- */
+#sim-app {
+  background: var(--card);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.6rem;
+}
+
+#sim-app .cell-output-stdout,
+#sim-app .cell-output-stdout pre {
+  background: #11151c;
+  color: #e8edf5;
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  white-space: pre-wrap;
+  margin: 0.8rem 0;
+}
+
+#sim-app .cell-output-display img {
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  margin: 0.8rem 0;
+}
+
+.callout {
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow);
+}
