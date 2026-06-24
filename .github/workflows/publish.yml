@@ -16,6 +16,9 @@ jobs:
         with:
           r-version: '4.3.2'
           
+      - name: Install system dependencies for R packages
+        run: sudo apt-get update -y && sudo apt-get install -y libuv1-dev libsass-dev
+
       - name: Install R packages
         run: |
           Rscript -e 'install.packages(c("knitr", "rmarkdown"), repos="https://cloud.r-project.org")'
