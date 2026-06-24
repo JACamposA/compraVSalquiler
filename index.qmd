@@ -667,7 +667,7 @@ message("Motor de simulacion cargado")
 <div class="slider-group">
 <label>Deposito en garantia <span class="slider-value" id="val-deposito">3</span></label>
 <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de alquiler que pedis como deposito al firmar</span>
+<span class="hint">Meses de alquiler que te piden como deposito al firmar</span>
 </div>
 
 <div class="slider-group">
