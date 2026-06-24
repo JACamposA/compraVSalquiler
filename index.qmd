@@ -1,6 +1,6 @@
 ---
 title: "Simulador de Vivienda Argentina"
-subtitle: "Compra vs Alquiler - Analisis Monte Carlo"
+subtitle: "Comprar con UVA vs Alquilar - Analisis Monte Carlo"
 format: 
   html:
     theme: flatly
@@ -15,7 +15,7 @@ webr:
 
 ```{=html}
 <div class="app-hero">
-  <h1>Comprar vs. Alquiler</h1>
+  <h1>Comprar con UVA vs. Alquilar</h1>
   <p>Simulador Monte Carlo para Argentina — ajusta los controles y descubre que conviene mas en tu caso.</p>
 </div>
 ```
