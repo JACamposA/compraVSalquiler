@@ -676,8 +676,7 @@ message("Motor de simulacion cargado")
 </div>
 :::
 
-<details id="sim-app" open>
-<summary>Motor de simulacion y resultados (click para editar manualmente)</summary>
+<div id="sim-app">
 
 ```{webr-r}
 ahorros_actuales_usd       <- 30000
@@ -706,7 +705,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                    n_simulaciones)
 ```
 
-</details>
+</div>
 
 ```{=html}
 <script>
