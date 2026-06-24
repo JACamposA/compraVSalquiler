@@ -629,9 +629,9 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>% del salario que podes ahorrar <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
+<label>% del salario para vivienda + ahorro <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
 <input type="range" id="sl-tasa_ahorro" min="0" max="100" step="1" value="50">
-<span class="hint">Lo que te queda libre cada mes para destinar a vivienda o ahorro</span>
+<span class="hint">De ese %, una parte va al alquiler o la cuota, y lo que sobra se ahorra/invierte</span>
 </div>
 
 <div class="slider-group">
@@ -667,7 +667,7 @@ message("Motor de simulacion cargado")
 <div class="slider-group">
 <label>Deposito en garantia <span class="slider-value" id="val-deposito">3</span></label>
 <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de alquiler que pedis como deposito al firmar</span>
+<span class="hint">Meses de alquiler que te piden como deposito al firmar</span>
 </div>
 
 <div class="slider-group">
@@ -685,7 +685,7 @@ message("Motor de simulacion cargado")
 <div class="slider-group">
 <label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
 <input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
-<span class="hint">Ganancia anual esperada si invertis el dinero que no usaste para comprar</span>
+<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span>
 </div>
 
 <div class="slider-group">
