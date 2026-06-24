@@ -79,9 +79,11 @@ title-block-header,
 }
 
 /* ---------------- Cards / panels ---------------- */
+/* Dark, matching the result console below it instead of a glaring white panel. */
 .app-card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: #11151c;
+  color: #e8edf5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   padding: 1.6rem 1.8rem;
   margin-bottom: 1.6rem;
@@ -91,6 +93,7 @@ title-block-header,
 .app-card h2, .app-card h3 {
   margin-top: 0;
   font-weight: 700;
+  color: #fff;
 }
 
 .app-section-title {
@@ -100,6 +103,7 @@ title-block-header,
   font-weight: 700;
   font-size: 1.15rem;
   margin-bottom: 1.1rem;
+  color: #fff;
 }
 
 .app-section-title .dot {
@@ -129,18 +133,19 @@ title-block-header,
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  color: #e8edf5;
 }
 
 .slider-group .hint {
   font-weight: 400;
-  color: var(--muted);
+  color: #8d96a8;
   font-size: 0.78rem;
 }
 
 .slider-value {
   font-weight: 700;
-  color: var(--accent);
-  background: rgba(46, 134, 193, 0.1);
+  color: #7fc1ec;
+  background: rgba(127, 193, 236, 0.15);
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
   font-size: 0.85rem;
@@ -153,7 +158,7 @@ input[type="range"] {
   width: 100%;
   height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #e2e6ef var(--fill, 50%), #e2e6ef 100%);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #2a3140 var(--fill, 50%), #2a3140 100%);
   outline: none;
   cursor: pointer;
 }
@@ -165,7 +170,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: #fff;
   border: 3px solid var(--accent);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -180,7 +185,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: #fff;
   border: 3px solid var(--accent);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   cursor: pointer;
 }
 
@@ -188,10 +193,11 @@ select.app-select {
   width: 100%;
   padding: 0.55rem 0.7rem;
   border-radius: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   font-family: inherit;
   font-size: 0.95rem;
-  background: #fafbfd;
+  background: #1a202c;
+  color: #e8edf5;
 }
 
 /* ---------------- Run button ---------------- */
@@ -220,7 +226,7 @@ select.app-select {
 
 .run-status {
   font-size: 0.9rem;
-  color: var(--muted);
+  color: #8d96a8;
   font-weight: 500;
 }
 
@@ -455,15 +461,6 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
 #sim-app .qwebr-output-code-area .rs-config-item strong {
   color: #fff;
   font-size: 0.9rem;
-}
-
-#sim-app .qwebr-output-code-area .rs-blurb {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: #8d96a8;
-  margin: 0.2rem 0 0.8rem 0;
-  max-width: 60ch;
 }
 
 .callout {
