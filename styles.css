@@ -224,46 +224,75 @@ select.app-select {
   font-weight: 500;
 }
 
-/* ---------------- Hide the underlying engine chunk ---------------- */
+/* ---------------- Engine chunk: no chrome of its own ---------------- */
+/* The wrapper itself stays invisible; only the actual output gets card styling,
+   so there is no empty box before a calculation has run. */
 #sim-app {
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  padding: 0.6rem;
-  background: #fafbfd;
   margin-top: 0.4rem;
 }
 
-/* Hide the Monaco code editor + its toolbar; only show output */
+/* Hide the Monaco code editor, its toolbar, and the run/reset/copy buttons */
 #sim-app .qwebr-editor-toolbar,
 #sim-app .qwebr-editor {
   display: none;
 }
 
 /* ---------------- Output styling ---------------- */
-#sim-app {
-  background: var(--card);
-  box-shadow: var(--shadow);
-  margin-bottom: 1.6rem;
-}
-
-#sim-app .cell-output-stdout,
-#sim-app .cell-output-stdout pre {
+#sim-app .qwebr-output-code-area {
   background: #11151c;
   color: #e8edf5;
-  border-radius: 14px;
-  padding: 1.1rem 1.3rem;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  white-space: pre-wrap;
-  margin: 0.8rem 0;
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+  box-shadow: var(--shadow);
+  margin: 0.6rem 0 1.6rem 0;
 }
 
-#sim-app .cell-output-display img {
-  border-radius: 14px;
+#sim-app .qwebr-output-code-area pre {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-line {
+  color: #c4ccd9;
+}
+
+#sim-app .qwebr-output-code-area .rs-heading {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: 0.3rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-rule {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0.5rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-rule-strong {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent-grad);
+  margin: 0.9rem 0;
+}
+
+#sim-app .qwebr-output-graph-area img {
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
-  margin: 0.8rem 0;
+  margin: 0.8rem 0 1.6rem 0;
+  background: var(--card);
+  padding: 0.8rem;
 }
 
 .callout {
   border-radius: var(--radius) !important;
   box-shadow: var(--shadow);
+  background: var(--card) !important;
+}
+
+.callout-body-container {
+  background: var(--card);
 }
