@@ -215,11 +215,10 @@ select.app-select {
   margin-top: 0.4rem;
 }
 
-#sim-app summary {
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-weight: 600;
+/* Hide the Monaco code editor + its toolbar; only show output */
+#sim-app .qwebr-editor-toolbar,
+#sim-app .qwebr-editor {
+  display: none;
 }
 
 /* ---------------- Output styling ---------------- */
