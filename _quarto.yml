@@ -3,3 +3,7 @@ project:
 
 website:
   title: "Simulador Vivienda"
+
+format:
+  html:
+    css: styles.css
