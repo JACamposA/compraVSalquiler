@@ -2040,12 +2040,50 @@ Calcular
     updateFill(el);
   }
 
+  // Remember the user's inputs across visits via localStorage.
+  const STORAGE_KEY = "compraVSalquiler:inputs";
+
+  function saveInputs() {
+    const data = {};
+    Object.keys(sliders).forEach(function (key) {
+      const el = document.getElementById(sliders[key].id);
+      if (el) data[key] = el.value;
+    });
+    const ubicacionEl = document.getElementById("sl-ubicacion");
+    if (ubicacionEl) data.ubicacion = ubicacionEl.value;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) { /* localStorage unavailable (private mode, etc.) - ignore */ }
+  }
+
+  function loadInputs() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const savedInputs = loadInputs();
+  if (savedInputs) {
+    Object.keys(sliders).forEach(function (key) {
+      const el = document.getElementById(sliders[key].id);
+      if (el && savedInputs[key] !== undefined) el.value = savedInputs[key];
+    });
+    const ubicacionEl = document.getElementById("sl-ubicacion");
+    if (ubicacionEl && savedInputs.ubicacion !== undefined) ubicacionEl.value = savedInputs.ubicacion;
+  }
+
   Object.keys(sliders).forEach(function (key) {
     const el = document.getElementById(sliders[key].id);
     if (!el) return;
     refreshLabel(key);
-    el.addEventListener("input", function () { refreshLabel(key); });
+    el.addEventListener("input", function () { refreshLabel(key); saveInputs(); });
   });
+
+  const ubicacionSelect = document.getElementById("sl-ubicacion");
+  if (ubicacionSelect) ubicacionSelect.addEventListener("change", saveInputs);
 
   function val(key) {
     return document.getElementById(sliders[key].id).value;
