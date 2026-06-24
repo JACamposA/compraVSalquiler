@@ -444,6 +444,41 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                               ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
                               n_simulaciones)
   
+  # --- Resumen simple: matematica directa, sin Monte Carlo, en USD de hoy ---
+  n_pagos <- plazo_anos * 12
+  tasa_real_mensual <- (1 + tasa_real_uva_anual)^(1/12) - 1
+  cuota_mensual_credito <- params$monto_credito_usd *
+    (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
+  total_pagado_credito <- cuota_mensual_credito * n_pagos
+  costo_inicial_compra <- params$costo_total_compra
+
+  total_pagado_alquiler <- alquiler_mensual_usd * 12 * plazo_anos
+  costo_inicial_alquiler <- alquiler_mensual_usd * (deposito_meses + comision_meses)
+
+  cat("================================================================\n")
+  cat("              RESUMEN RAPIDO (cuentas simples, sin simulacion)\n")
+  cat("================================================================\n\n")
+  cat("   Estos numeros NO incluyen crisis, perdida de empleo, ni\n")
+  cat("   variaciones del mercado: son la cuenta directa si todo\n")
+  cat("   se mantiene estable durante todo el periodo.\n\n")
+  cat("   COMPRANDO:\n")
+  cat(sprintf("      Pago inicial (anticipo + escritura): $%s USD\n",
+              format(round(costo_inicial_compra), big.mark = ",")))
+  cat(sprintf("      Cuota mensual del credito:           $%s USD/mes\n",
+              format(round(cuota_mensual_credito), big.mark = ",")))
+  cat(sprintf("      Total pagado en %d anos de cuotas:    $%s USD\n",
+              plazo_anos, format(round(total_pagado_credito), big.mark = ",")))
+  cat("      Al terminar de pagar, la propiedad es tuya.\n\n")
+  cat("   ALQUILANDO:\n")
+  cat(sprintf("      Pago inicial (deposito + comision):  $%s USD\n",
+              format(round(costo_inicial_alquiler), big.mark = ",")))
+  cat(sprintf("      Alquiler mensual:                    $%s USD/mes\n",
+              format(round(alquiler_mensual_usd), big.mark = ",")))
+  cat(sprintf("      Total pagado en %d anos de alquiler:  $%s USD\n",
+              plazo_anos, format(round(total_pagado_alquiler), big.mark = ",")))
+  cat("      Al terminar, no sos dueno de nada, pero pudiste\n")
+  cat("      invertir lo que no gastaste de entrada ni en cuotas.\n\n")
+
   # Run simulation
   resultados <- ejecutar_simulacion_completa(params)
   
@@ -468,31 +503,31 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   
   # Display results
   cat("================================================================\n")
-  cat("                      RESULTADOS                                \n")
+  cat("           RESULTADOS DE LA SIMULACION (con riesgos e incertidumbre)\n")
   cat("================================================================\n\n")
   
   if (prob_compra_gana > 0.6) {
     cat("------------------------------------------------------------\n")
     cat("       RECOMENDACION: COMPRAR                               \n")
     cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-    cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", prob_compra_gana * 100, n_simulaciones))
+    cat(sprintf("\n   Terminarias con aproximadamente $%s USD mas\n", format(round(abs(diferencia_media)), big.mark=",")))
+    cat(sprintf("   Comprar te conviene en %.0f de cada 100 escenarios probados\n\n", prob_compra_gana * 100))
   } else if (prob_compra_gana < 0.4) {
     cat("------------------------------------------------------------\n")
     cat("       RECOMENDACION: ALQUILAR                              \n")
     cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Genera aproximadamente $%s USD mas en promedio\n", format(round(abs(diferencia_media)), big.mark=",")))
-    cat(sprintf("   Gana en %.0f%% de los %d escenarios simulados\n\n", (1-prob_compra_gana) * 100, n_simulaciones))
+    cat(sprintf("\n   Terminarias con aproximadamente $%s USD mas\n", format(round(abs(diferencia_media)), big.mark=",")))
+    cat(sprintf("   Alquilar te conviene en %.0f de cada 100 escenarios probados\n\n", (1-prob_compra_gana) * 100))
   } else {
     cat("------------------------------------------------------------\n")
     cat("       RESULTADO: AMBAS OPCIONES SON SIMILARES              \n")
     cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Compra gana en %.0f%% de escenarios\n", prob_compra_gana * 100))
-    cat(sprintf("   Alquiler gana en %.0f%% de escenarios\n\n", (1-prob_compra_gana) * 100))
+    cat(sprintf("\n   Comprar te conviene en %.0f de cada 100 escenarios probados\n", prob_compra_gana * 100))
+    cat(sprintf("   Alquilar te conviene en %.0f de cada 100 escenarios probados\n\n", (1-prob_compra_gana) * 100))
   }
-  
+
   cat("------------------------------------------------------------\n")
-  cat("                 SU CONFIGURACION\n")
+  cat("                 TU CONFIGURACION\n")
   cat("------------------------------------------------------------\n")
   cat(sprintf("   Ahorros: $%s    |    Salario: $%s/mes\n", 
               format(ahorros_actuales_usd, big.mark=","), format(salario_mensual_usd, big.mark=",")))
@@ -505,14 +540,14 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   cat("------------------------------------------------------------\n\n")
   
   cat("   COMPRA:\n")
-  cat(sprintf("      Promedio:        $%s USD\n", format(round(s_compra$media), big.mark=",")))
-  cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=",")))
-  cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
-  
+  cat(sprintf("      Lo mas probable:         $%s USD\n", format(round(s_compra$media), big.mark=",")))
+  cat(sprintf("      Rango normal de resultados: $%s - $%s USD\n", format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=",")))
+  cat(sprintf("      Si te va muy mal:        $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
+
   cat("   ALQUILER:\n")
-  cat(sprintf("      Promedio:        $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
-  cat(sprintf("      Rango (80%%):     $%s - $%s USD\n", format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=",")))
-  cat(sprintf("      Peor caso (5%%):  $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
+  cat(sprintf("      Lo mas probable:         $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
+  cat(sprintf("      Rango normal de resultados: $%s - $%s USD\n", format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=",")))
+  cat(sprintf("      Si te va muy mal:        $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
   
   cat("================================================================\n")
   cat("                       GRAFICOS\n")
@@ -594,9 +629,9 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>% del salario ahorrado <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
+<label>% del salario que podes ahorrar <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
 <input type="range" id="sl-tasa_ahorro" min="0" max="100" step="1" value="50">
-<span class="hint">Disponible para vivienda + ahorro</span>
+<span class="hint">Lo que te queda libre cada mes para destinar a vivienda o ahorro</span>
 </div>
 
 <div class="slider-group">
@@ -606,9 +641,9 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>Enganche <span class="slider-value" id="val-enganche">20%</span></label>
+<label>Anticipo <span class="slider-value" id="val-enganche">20%</span></label>
 <input type="range" id="sl-enganche" min="0" max="80" step="1" value="20">
-<span class="hint">% de entrada al credito UVA</span>
+<span class="hint">% del valor de la propiedad que pagas de entrada (el resto es el credito UVA)</span>
 </div>
 
 <div class="slider-group">
@@ -630,9 +665,9 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>Deposito (meses) <span class="slider-value" id="val-deposito">3</span></label>
+<label>Deposito en garantia <span class="slider-value" id="val-deposito">3</span></label>
 <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de garantia/mudanza</span>
+<span class="hint">Meses de alquiler que pedis como deposito al firmar</span>
 </div>
 
 <div class="slider-group">
@@ -650,13 +685,13 @@ message("Motor de simulacion cargado")
 <div class="slider-group">
 <label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
 <input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
-<span class="hint">Retorno esperado anual (ej. S&P 500)</span>
+<span class="hint">Ganancia anual esperada si invertis el dinero que no usaste para comprar</span>
 </div>
 
 <div class="slider-group">
-<label>Cantidad de simulaciones <span class="slider-value" id="val-nsim">500</span></label>
+<label>Precision del calculo <span class="slider-value" id="val-nsim">500</span></label>
 <input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
-<span class="hint">Mas escenarios = mayor precision, mas tiempo</span>
+<span class="hint">Mas alto = resultado mas confiable, pero tarda un poco mas</span>
 </div>
 
 <div class="slider-group">
@@ -857,7 +892,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
 
 **Eventos de Vida:** Perdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovacion de alquiler.
 
-**Inversiones:** Quien alquila invierte el capital en S&P 500 (7% esperado, 15% volatilidad). Incluye comportamiento de panico en caidas.
+**Inversiones:** Quien alquila invierte el dinero que no gasto en la compra en un fondo diversificado de acciones (similar al indice S&P 500 de EE.UU.), con un retorno esperado configurable y altibajos realistas. Incluye comportamiento de panico en caidas (vender en el peor momento).
 
 **Impuestos:** ITI, Bienes Personales, ganancias de capital. Exencion por vivienda unica.
 
