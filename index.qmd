@@ -562,43 +562,33 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     pivot_wider(names_from = tipo_clean, values_from = patrimonio) %>%
     mutate(diferencia = Compra - Alquiler)
   
-  # Plot 1
-  g1 <- ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
+  # Plot 1: Compra - Alquiler difference (the "verdict" chart, shown first)
+  media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
+  pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
+  cat("@@BLURB@@texto=Cada barra agrupa simulaciones según cuánto más (o menos) patrimonio terminaste teniendo por comprar en vez de alquilar. A la derecha de la línea roja, comprar te dejó con más plata en ese escenario; a la izquierda, te fue mejor alquilando.@@\n")
+  g_dif <- ggplot(diferencias, aes(x = diferencia / 1000)) +
+    geom_histogram(fill = "#6c5ce7", alpha = 0.8, bins = 40) +
+    geom_vline(xintercept = 0, linetype = "solid", color = "#ff6b6b", linewidth = 1.2) +
+    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "#7fc1ec", linewidth = 1) +
+    labs(title = "¿Quién te conviene más: comprar o alquilar?",
+         subtitle = sprintf("A la derecha del 0 = te convino comprar (%.0f%% de los casos) | A la izquierda = te convino alquilar (%.0f%% de los casos)", pct_compra_mejor, 100-pct_compra_mejor),
+         x = "Diferencia en tu patrimonio final (miles USD)", y = "Cantidad de simulaciones") +
+    tema_oscuro(12)
+  print(g_dif)
+
+  # Plot 2: patrimonio evolution over time (supporting context: shows how/why the gap grows)
+  cat("@@BLURB@@texto=Este gráfico muestra cómo crecería tu patrimonio a lo largo de los años en cada opción. La línea es el resultado más típico, y las bandas muestran qué tan distintos pueden ser los resultados según cómo se comporte la economía en el camino.@@\n")
+  g_evol <- ggplot(patrimonio_por_año, aes(x = año, color = tipo_clean, fill = tipo_clean)) +
     geom_ribbon(aes(ymin = q10 / 1000, ymax = q90 / 1000), alpha = 0.15, color = NA) +
     geom_ribbon(aes(ymin = q25 / 1000, ymax = q75 / 1000), alpha = 0.25, color = NA) +
     geom_line(aes(y = mediana / 1000), linewidth = 1.2) +
     scale_color_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
     scale_fill_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
     scale_y_continuous(labels = scales::label_dollar(suffix = "K")) +
-    labs(title = "Evolución del Patrimonio", subtitle = "Línea: mediana | Banda oscura: 50% | Banda clara: 80%",
-         x = "Años", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
+    labs(title = "¿Cómo evoluciona tu patrimonio con el tiempo?", subtitle = "Línea = resultado típico | Banda oscura = la mitad de los casos | Banda clara = la gran mayoría de los casos",
+         x = "Años transcurridos", y = "Patrimonio estimado (miles USD)", color = "Opción", fill = "Opción") +
     tema_oscuro(12) + theme(legend.position = "bottom")
-  print(g1)
-
-  # Plot 2
-  stats_media <- resultados_final %>% group_by(tipo_clean) %>% summarise(media = mean(patrimonio, na.rm = TRUE), .groups = "drop")
-  g2 <- ggplot(resultados_final, aes(x = patrimonio / 1000, fill = tipo_clean)) +
-    geom_histogram(alpha = 0.7, bins = 40, position = "identity") +
-    geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean), linetype = "dashed", linewidth = 1) +
-    scale_fill_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
-    scale_color_manual(values = c("Compra" = "#7fc1ec", "Alquiler" = "#6fe0a0")) +
-    labs(title = sprintf("Distribución del Patrimonio Final (%d años)", plazo_anos), subtitle = "Líneas punteadas = promedio",
-         x = "Patrimonio Final (miles USD)", y = "Frecuencia", fill = "Estrategia", color = "Promedio") +
-    tema_oscuro(12) + theme(legend.position = "bottom")
-  print(g2)
-
-  # Plot 3
-  media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
-  pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
-  g3 <- ggplot(diferencias, aes(x = diferencia / 1000)) +
-    geom_histogram(fill = "#6c5ce7", alpha = 0.8, bins = 40) +
-    geom_vline(xintercept = 0, linetype = "solid", color = "#ff6b6b", linewidth = 1.2) +
-    geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "#7fc1ec", linewidth = 1) +
-    labs(title = "Diferencia: Compra - Alquiler",
-         subtitle = sprintf("Positivo = Compra gana (%.0f%%) | Negativo = Alquiler gana (%.0f%%)", pct_compra_mejor, 100-pct_compra_mejor),
-         x = "Diferencia (miles USD)", y = "Frecuencia") +
-    tema_oscuro(12)
-  print(g3)
+  print(g_evol)
 }
 
 message("Motor de simulación cargado")
@@ -930,12 +920,17 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     return '<div class="rs-section-label">' + f.texto + "</div>";
   }
 
+  function renderBlurbCard(f) {
+    return '<div class="rs-blurb">' + f.texto + "</div>";
+  }
+
   const CARD_RENDERERS = {
     RESUMEN: renderResumenCard,
     RECOMENDACION: renderRecomendacionCard,
     CONFIGURACION: renderConfiguracionCard,
     PATRIMONIO: renderPatrimonioCard,
-    SECCION: renderSeccionCard
+    SECCION: renderSeccionCard,
+    BLURB: renderBlurbCard
   };
 
   function escapeHtml(text) {
