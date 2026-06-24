@@ -1,6 +1,6 @@
 ---
 title: "Simulador de Vivienda Argentina"
-subtitle: "Comprar con UVA vs Alquilar - Analisis Monte Carlo"
+subtitle: "Comprar con UVA vs Alquilar - Análisis Monte Carlo"
 format: 
   html:
     theme: flatly
@@ -16,7 +16,7 @@ webr:
 ```{=html}
 <div class="app-hero">
   <h1>Comprar con UVA vs. Alquilar</h1>
-  <p>Simulador Monte Carlo para Argentina — ajusta los controles y descubre que conviene mas en tu caso.</p>
+  <p>Simulador Monte Carlo para Argentina — ajusta los controles y descubre qué conviene más en tu caso.</p>
 </div>
 ```
 
@@ -434,8 +434,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                                 n_simulaciones) {
   
   cat("\n")
-  cat("Procesando simulacion...\n")
-  cat("Simulando", n_simulaciones, "escenarios para", plazo_anos, "anos...\n\n")
+  cat("Procesando simulación...\n")
+  cat("Simulando", n_simulaciones, "escenarios para", plazo_anos, "años...\n\n")
   
   # Build params
  params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
@@ -445,19 +445,29 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                               n_simulaciones)
   
   # --- Resumen simple: matematica directa, sin Monte Carlo, en USD de hoy ---
+  # Usa la misma tasa mensual que el motor de simulacion (division simple,
+  # no compuesta) para que la cuota acá coincida con la cuota inicial real
+  # de la simulacion.
   n_pagos <- plazo_anos * 12
-  tasa_real_mensual <- (1 + tasa_real_uva_anual)^(1/12) - 1
+  tasa_real_mensual <- tasa_real_uva_anual / 12
   cuota_mensual_credito <- params$monto_credito_usd *
     (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
-  total_pagado_credito <- cuota_mensual_credito * n_pagos
+
+  # Gastos fijos de ser propietario (impuestos, seguro, mantenimiento) que
+  # se pagan ademas de la cuota del credito, todos los meses.
+  gastos_propietario_mensual <- valor_propiedad_usd *
+    (params$costo_mantenimiento_anual_pct + params$impuesto_inmobiliario_anual + params$seguro_hogar_anual_pct) / 12
+
+  costo_mensual_compra <- cuota_mensual_credito + gastos_propietario_mensual
+  total_pagado_credito <- costo_mensual_compra * n_pagos
   costo_inicial_compra <- params$costo_total_compra
 
   total_pagado_alquiler <- alquiler_mensual_usd * 12 * plazo_anos
   costo_inicial_alquiler <- alquiler_mensual_usd * (deposito_meses + comision_meses)
 
   cat(sprintf(
-    "@@RESUMEN@@plazo=%d|compra_inicial=%.0f|compra_cuota=%.0f|compra_total=%.0f|alquiler_inicial=%.0f|alquiler_cuota=%.0f|alquiler_total=%.0f@@\n",
-    plazo_anos, costo_inicial_compra, cuota_mensual_credito, total_pagado_credito,
+    "@@RESUMEN@@plazo=%d|compra_inicial=%.0f|compra_cuota=%.0f|compra_gastos=%.0f|compra_total=%.0f|alquiler_inicial=%.0f|alquiler_cuota=%.0f|alquiler_total=%.0f@@\n",
+    plazo_anos, costo_inicial_compra, cuota_mensual_credito, gastos_propietario_mensual, total_pagado_credito,
     costo_inicial_alquiler, alquiler_mensual_usd, total_pagado_alquiler
   ))
 
@@ -485,7 +495,7 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   
   # Display results
   cat("================================================================\n")
-  cat("           RESULTADOS DE LA SIMULACION (con riesgos e incertidumbre)\n")
+  cat("           RESULTADOS DE LA SIMULACIÓN (con riesgos e incertidumbre)\n")
   cat("================================================================\n\n")
 
   if (prob_compra_gana > 0.6) {
@@ -515,7 +525,7 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   ))
 
   cat("================================================================\n")
-  cat("                       GRAFICOS\n")
+  cat("                       GRÁFICOS\n")
   cat("================================================================\n\n")
   
   # Prepare data for plots
@@ -540,8 +550,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
     scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
     scale_y_continuous(labels = scales::label_dollar(suffix = "K")) +
-    labs(title = "Evolucion del Patrimonio", subtitle = "Linea: mediana | Banda oscura: 50% | Banda clara: 80%",
-         x = "Anos", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
+    labs(title = "Evolución del Patrimonio", subtitle = "Línea: mediana | Banda oscura: 50% | Banda clara: 80%",
+         x = "Años", y = "Patrimonio (miles USD)", color = "Estrategia", fill = "Estrategia") +
     theme_minimal(base_size = 12) + theme(legend.position = "bottom")
   print(g1)
   
@@ -552,7 +562,7 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     geom_vline(data = stats_media, aes(xintercept = media / 1000, color = tipo_clean), linetype = "dashed", linewidth = 1) +
     scale_fill_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
     scale_color_manual(values = c("Compra" = "#2E86C1", "Alquiler" = "#E67E22")) +
-    labs(title = sprintf("Distribucion del Patrimonio Final (%d anos)", plazo_anos), subtitle = "Lineas punteadas = promedio",
+    labs(title = sprintf("Distribución del Patrimonio Final (%d años)", plazo_anos), subtitle = "Líneas punteadas = promedio",
          x = "Patrimonio Final (miles USD)", y = "Frecuencia", fill = "Estrategia", color = "Promedio") +
     theme_minimal(base_size = 12) + theme(legend.position = "bottom")
   print(g2)
@@ -570,10 +580,10 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     theme_minimal(base_size = 12)
   print(g3)
   
-  cat("\nAnalisis completado\n")
+  cat("\nAnálisis completado\n")
 }
 
-message("Motor de simulacion cargado")
+message("Motor de simulación cargado")
 ```
 
 ::: {.app-card}
@@ -608,19 +618,19 @@ message("Motor de simulacion cargado")
 <div class="slider-group">
 <label>Anticipo <span class="slider-value" id="val-enganche">20%</span></label>
 <input type="range" id="sl-enganche" min="0" max="80" step="1" value="20">
-<span class="hint">% del valor de la propiedad que pagas de entrada (el resto es el credito UVA)</span>
+<span class="hint">% del valor de la propiedad que pagas de entrada (el resto es el crédito UVA)</span>
 </div>
 
 <div class="slider-group">
-<label>Plazo del credito <span class="slider-value" id="val-plazo">25 años</span></label>
+<label>Plazo del crédito <span class="slider-value" id="val-plazo">25 años</span></label>
 <input type="range" id="sl-plazo" min="5" max="35" step="1" value="25">
-<span class="hint">Duracion del credito UVA</span>
+<span class="hint">Duración del crédito UVA</span>
 </div>
 
 <div class="slider-group">
 <label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
 <input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
-<span class="hint">Tasa real anual del credito</span>
+<span class="hint">Tasa real anual del crédito</span>
 </div>
 
 <div class="slider-group">
@@ -630,21 +640,21 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>Deposito en garantia <span class="slider-value" id="val-deposito">3</span></label>
+<label>Depósito en garantía <span class="slider-value" id="val-deposito">3</span></label>
 <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de alquiler que te piden como deposito al firmar</span>
+<span class="hint">Meses de alquiler que te piden como depósito al firmar</span>
 </div>
 
 <div class="slider-group">
-<label>Comision inmobiliaria <span class="slider-value" id="val-comision">1 mes</span></label>
+<label>Comisión inmobiliaria <span class="slider-value" id="val-comision">1 mes</span></label>
 <input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1">
-<span class="hint">Meses de comision al alquilar</span>
+<span class="hint">Meses de comisión al alquilar</span>
 </div>
 
 <div class="slider-group">
 <label>Crecimiento real del salario <span class="slider-value" id="val-crecimiento">8%</span></label>
 <input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8">
-<span class="hint">Por año, por encima de inflacion</span>
+<span class="hint">Por año, por encima de inflación</span>
 </div>
 
 <div class="slider-group">
@@ -654,18 +664,18 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>Precision del calculo <span class="slider-value" id="val-nsim">500</span></label>
+<label>Precisión del cálculo <span class="slider-value" id="val-nsim">500</span></label>
 <input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
-<span class="hint">Mas alto = resultado mas confiable, pero tarda un poco mas</span>
+<span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span>
 </div>
 
 <div class="slider-group">
-<label>Ubicacion</label>
+<label>Ubicación</label>
 <select class="app-select" id="sl-ubicacion">
   <option value="CABA">CABA</option>
   <option value="GBA" selected>GBA</option>
 </select>
-<span class="hint">CABA: 3% apreciacion anual | GBA: 1%</span>
+<span class="hint">CABA: 3% apreciación anual | GBA: 1%</span>
 </div>
 
 </div>
@@ -837,28 +847,29 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
         '<div class="rs-card rs-card-compra">' +
           '<div class="rs-card-title">Comprando</div>' +
           '<div class="rs-card-row"><span>Pago inicial (anticipo + escritura)</span><strong>' + usd(f.compra_inicial) + "</strong></div>" +
-          '<div class="rs-card-row"><span>Cuota mensual del credito</span><strong>' + usd(f.compra_cuota) + "/mes</strong></div>" +
-          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' anos</span><strong>' + usd(f.compra_total) + "</strong></div>" +
-          '<div class="rs-card-note">Al terminar de pagar, la propiedad es tuya.</div>' +
+          '<div class="rs-card-row"><span>Cuota mensual del crédito</span><strong>' + usd(f.compra_cuota) + "/mes</strong></div>" +
+          '<div class="rs-card-row"><span>Impuestos, seguro y mantenimiento</span><strong>' + usd(f.compra_gastos) + "/mes</strong></div>" +
+          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' años</span><strong>' + usd(f.compra_total) + "</strong></div>" +
+          '<div class="rs-card-note">Incluye cuota + impuestos/seguro/mantenimiento. Al terminar de pagar, la propiedad es tuya.</div>' +
         "</div>" +
         '<div class="rs-card rs-card-alquiler">' +
           '<div class="rs-card-title">Alquilando</div>' +
-          '<div class="rs-card-row"><span>Pago inicial (deposito + comision)</span><strong>' + usd(f.alquiler_inicial) + "</strong></div>" +
+          '<div class="rs-card-row"><span>Pago inicial (depósito + comisión)</span><strong>' + usd(f.alquiler_inicial) + "</strong></div>" +
           '<div class="rs-card-row"><span>Alquiler mensual</span><strong>' + usd(f.alquiler_cuota) + "/mes</strong></div>" +
-          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' anos</span><strong>' + usd(f.alquiler_total) + "</strong></div>" +
-          '<div class="rs-card-note">No sos dueno de nada, pero pudiste invertir lo que no gastaste.</div>' +
+          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' años</span><strong>' + usd(f.alquiler_total) + "</strong></div>" +
+          '<div class="rs-card-note">No sos dueño de nada, pero pudiste invertir lo que no gastaste.</div>' +
         "</div>" +
       "</div>"
     );
   }
 
   function renderRecomendacionCard(f) {
-    const labels = { comprar: "RECOMENDACION: COMPRAR", alquilar: "RECOMENDACION: ALQUILAR", empate: "AMBAS OPCIONES SON SIMILARES" };
+    const labels = { comprar: "RECOMENDACIÓN: COMPRAR", alquilar: "RECOMENDACIÓN: ALQUILAR", empate: "AMBAS OPCIONES SON SIMILARES" };
     const cls = { comprar: "rs-badge-comprar", alquilar: "rs-badge-alquilar", empate: "rs-badge-empate" };
     const tipo = f.tipo in labels ? f.tipo : "empate";
     const detalle = tipo === "empate"
       ? "Comprar te conviene en " + f.prob + " de cada 100 escenarios probados, alquilar en " + f.prob_alquiler + "."
-      : "Terminarias con aproximadamente " + usd(f.diferencia) + " mas. Te conviene en " + f.prob + " de cada 100 escenarios probados.";
+      : "Terminarías con aproximadamente " + usd(f.diferencia) + " más. Te conviene en " + f.prob + " de cada 100 escenarios probados.";
     return (
       '<div class="rs-reco-card">' +
         '<div class="rs-badge ' + cls[tipo] + '">' + labels[tipo] + "</div>" +
@@ -873,9 +884,9 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
         '<div class="rs-config-item"><span>Ahorros</span><strong>' + usd(f.ahorros) + "</strong></div>" +
         '<div class="rs-config-item"><span>Salario</span><strong>' + usd(f.salario) + "/mes</strong></div>" +
         '<div class="rs-config-item"><span>Propiedad</span><strong>' + usd(f.propiedad) + "</strong></div>" +
-        '<div class="rs-config-item"><span>Credito</span><strong>' + usd(f.credito) + " a " + f.plazo + " anos</strong></div>" +
+        '<div class="rs-config-item"><span>Crédito</span><strong>' + usd(f.credito) + " a " + f.plazo + " años</strong></div>" +
         '<div class="rs-config-item"><span>Alquiler</span><strong>' + usd(f.alquiler) + "/mes</strong></div>" +
-        '<div class="rs-config-item"><span>Ubicacion</span><strong>' + f.ubicacion + "</strong></div>" +
+        '<div class="rs-config-item"><span>Ubicación</span><strong>' + f.ubicacion + "</strong></div>" +
       "</div>"
     );
   }
@@ -892,7 +903,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       );
     }
     return (
-      '<div class="rs-section-label">Patrimonio estimado en ' + f.plazo + " anos</div>" +
+      '<div class="rs-section-label">Patrimonio estimado en ' + f.plazo + " años</div>" +
       '<div class="rs-card-grid">' + col("Compra", "compra") + col("Alquiler", "alquiler") + "</div>"
     );
   }
@@ -956,7 +967,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
 
   btn.addEventListener("click", async function () {
     btn.disabled = true;
-    status.textContent = "Cargando motor de simulacion...";
+    status.textContent = "Cargando motor de simulación...";
 
     if (window.qwebrInstance && typeof window.qwebrInstance.then === "function") {
       await window.qwebrInstance;
@@ -964,7 +975,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
 
     const entry = getEditorEntry();
     if (!entry || typeof window.qwebrExecuteCode !== "function") {
-      status.textContent = "El motor aun esta cargando, intenta de nuevo en unos segundos.";
+      status.textContent = "El motor aún está cargando, intenta de nuevo en unos segundos.";
       btn.disabled = false;
       return;
     }
@@ -978,7 +989,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       beautifyOutput();
       status.textContent = "Resultados generados.";
     } catch (e) {
-      status.textContent = "Ocurrio un error al calcular. Revisa 'Motor de simulacion'.";
+      status.textContent = "Ocurrió un error al calcular. Revisa 'Motor de simulación'.";
       console.error(e);
     } finally {
       btn.disabled = false;
@@ -991,23 +1002,23 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
 ---
 
 ::: {.callout-note collapse="true"}
-## Que incluye esta simulacion? (click para expandir)
+## ¿Qué incluye esta simulación? (click para expandir)
 
-**Credito UVA:** Cuota que ajusta por inflacion argentina, sistema frances con tasa real configurable.
+**Crédito UVA:** Cuota que ajusta por inflación argentina, sistema francés con tasa real configurable.
 
-**Crisis Argentinas:** 8% probabilidad anual de crisis con devaluacion (+40%), caida de salarios (-20%), caida inmobiliaria (-25%), duracion promedio de 18 meses.
+**Crisis Argentinas:** 8% probabilidad anual de crisis con devaluación (+40%), caída de salarios (-20%), caída inmobiliaria (-25%), duración promedio de 18 meses.
 
-**Eventos de Vida:** Perdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovacion de alquiler.
+**Eventos de Vida:** Pérdida de empleo (5% anual), promociones (+20%), reparaciones mayores, problemas legales, no renovación de alquiler.
 
-**Inversiones:** Quien alquila invierte el dinero que no gasto en la compra en un fondo diversificado de acciones (similar al indice S&P 500 de EE.UU.), con un retorno esperado configurable y altibajos realistas. Incluye comportamiento de panico en caidas (vender en el peor momento).
+**Inversiones:** Quien alquila invierte el dinero que no gastó en la compra en un fondo diversificado de acciones (similar al índice S&P 500 de EE.UU.), con un retorno esperado configurable y altibajos realistas. Incluye comportamiento de pánico en caídas (vender en el peor momento).
 
-**Impuestos:** ITI, Bienes Personales, ganancias de capital. Exencion por vivienda unica.
+**Impuestos:** ITI, Bienes Personales, ganancias de capital. Exención por vivienda única.
 
-**Ubicacion:** CABA asume 3% apreciacion anual en USD, GBA asume 1%.
+**Ubicación:** CABA asume 3% apreciación anual en USD, GBA asume 1%.
 :::
 
 ::: {.callout-warning}
 ## Disclaimer
-Este analisis es una herramienta de apoyo, no asesoramiento financiero. Los resultados son simulaciones basadas en supuestos que pueden no cumplirse. Consulte con un profesional antes de tomar decisiones.
+Este análisis es una herramienta de apoyo, no asesoramiento financiero. Los resultados son simulaciones basadas en supuestos que pueden no cumplirse. Consulte con un profesional antes de tomar decisiones.
 :::
 
