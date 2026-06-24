@@ -904,8 +904,17 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     PATRIMONIO: renderPatrimonioCard
   };
 
-  // The R console output lands as one big HTML blob (lines joined by <br>)
-  // inside #sim-app .qwebr-output-code-area pre. Reclassify each line as a
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  // quarto-webr renders each console output chunk as one or more <code>
+  // elements whose text contains literal "\n" characters (not <br> tags) -
+  // the line breaks only show up visually because of white-space: pre-wrap.
+  // Read the plain text, split it ourselves, and reclassify each line as a
   // heading / divider / plain line (or a styled card, for lines emitted as
   // "@@TAG@@key=val|...@@" markers) so it can be styled like the rest of the page.
   function beautifyOutput() {
@@ -914,19 +923,20 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const target = area.querySelector("pre > div") || area.querySelector("pre");
     if (!target) return;
 
-    const lines = target.innerHTML.split(/<br\s*\/?>/i);
+    const lines = target.textContent.split("\n");
     target.innerHTML = lines.map(function (line) {
-      const text = line.replace(/<[^>]*>/g, "").trim();
+      const text = line.trim();
       const marker = parseCardMarker(text);
       if (marker && CARD_RENDERERS[marker.tag]) {
         return CARD_RENDERERS[marker.tag](marker.fields);
       }
       if (/^=+$/.test(text)) return '<div class="rs-rule rs-rule-strong"></div>';
       if (/^-+$/.test(text)) return '<div class="rs-rule"></div>';
-      if (text && /[A-ZÁÉÍÓÚÑ]/.test(text) && text === text.toUpperCase()) {
-        return '<div class="rs-heading">' + line + "</div>";
+      if (!text) return '<div class="rs-line">&nbsp;</div>';
+      if (/[A-ZÁÉÍÓÚÑ]/.test(text) && text === text.toUpperCase()) {
+        return '<div class="rs-heading">' + escapeHtml(text) + "</div>";
       }
-      return '<div class="rs-line">' + line + "</div>";
+      return '<div class="rs-line">' + escapeHtml(text) + "</div>";
     }).join("");
   }
 
