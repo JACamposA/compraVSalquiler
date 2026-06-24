@@ -259,6 +259,14 @@ select.app-select {
   color: #c4ccd9;
 }
 
+/* quarto-webr's own stylesheet sets a near-black color on the stdout/stderr
+   code elements with higher specificity (body.quarto-light ...), which made
+   the text unreadable against our dark console background. Force it back. */
+body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout,
+#sim-app .qwebr-output-code-area code.qwebr-output-code-stdout {
+  color: inherit;
+}
+
 #sim-app .qwebr-output-code-area .rs-heading {
   color: #fff;
   font-weight: 700;
