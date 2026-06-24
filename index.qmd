@@ -629,9 +629,9 @@ message("Motor de simulacion cargado")
 </div>
 
 <div class="slider-group">
-<label>% del salario que podes ahorrar <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
+<label>% del salario para vivienda + ahorro <span class="slider-value" id="val-tasa_ahorro">50%</span></label>
 <input type="range" id="sl-tasa_ahorro" min="0" max="100" step="1" value="50">
-<span class="hint">Lo que te queda libre cada mes para destinar a vivienda o ahorro</span>
+<span class="hint">De ese %, una parte va al alquiler o la cuota, y lo que sobra se ahorra/invierte</span>
 </div>
 
 <div class="slider-group">
