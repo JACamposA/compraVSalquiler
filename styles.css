@@ -19,6 +19,24 @@ body {
   color: var(--ink);
 }
 
+@media (max-width: 767px) {
+  body {
+    background-image: url('images/bg-mobile.png');
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    background-image: url('images/bg-desktop.png');
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+  }
+}
+
 #quarto-content > * {
   max-width: 980px;
 }
