@@ -778,45 +778,48 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     ].join("\n");
   }
 
-  function setEditorContent(text) {
-    const wrapper = document.getElementById("sim-app");
-    const cmContent = wrapper && wrapper.querySelector(".cm-content");
-    if (!cmContent) return false;
-    cmContent.focus();
-    document.execCommand("selectAll", false, null);
-    document.execCommand("insertText", false, text);
-    return true;
-  }
-
-  function clickRun() {
-    const wrapper = document.getElementById("sim-app");
-    if (!wrapper) return false;
-    const buttons = wrapper.querySelectorAll("button");
-    for (const btn of buttons) {
-      if (/run/i.test(btn.textContent || "")) { btn.click(); return true; }
-    }
-    if (buttons.length) { buttons[0].click(); return true; }
-    return false;
+  // quarto-webr renders each interactive chunk with a Monaco editor instance
+  // stored in window.qwebrEditorInstances[id], and exposes a single global
+  // qwebrExecuteCode(code, id, options) used by its own Run Code button.
+  function getEditorEntry() {
+    const instances = window.qwebrEditorInstances;
+    if (!instances) return null;
+    const ids = Object.keys(instances);
+    if (!ids.length) return null;
+    return { id: ids[0], editor: instances[ids[0]] };
   }
 
   const btn = document.getElementById("btn-calcular");
   const status = document.getElementById("run-status");
 
-  btn.addEventListener("click", function () {
+  btn.addEventListener("click", async function () {
     btn.disabled = true;
-    status.textContent = "Calculando, puede tardar unos segundos...";
-    const code = buildCode();
-    const ok = setEditorContent(code);
-    if (!ok) {
+    status.textContent = "Cargando motor de simulacion...";
+
+    if (window.qwebrInstance && typeof window.qwebrInstance.then === "function") {
+      await window.qwebrInstance;
+    }
+
+    const entry = getEditorEntry();
+    if (!entry || typeof window.qwebrExecuteCode !== "function") {
       status.textContent = "El motor aun esta cargando, intenta de nuevo en unos segundos.";
       btn.disabled = false;
       return;
     }
-    setTimeout(function () {
-      const ran = clickRun();
-      status.textContent = ran ? "Resultados generados." : "Abre 'Motor de simulacion' y presiona Run Code manualmente.";
+
+    status.textContent = "Calculando, puede tardar unos segundos...";
+    const code = buildCode();
+    entry.editor.setValue(code);
+
+    try {
+      await window.qwebrExecuteCode(code, entry.id, entry.editor.__qwebrOptions);
+      status.textContent = "Resultados generados.";
+    } catch (e) {
+      status.textContent = "Ocurrio un error al calcular. Revisa 'Motor de simulacion'.";
+      console.error(e);
+    } finally {
       btn.disabled = false;
-    }, 150);
+    }
   });
 })();
 </script>
