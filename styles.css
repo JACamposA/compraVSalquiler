@@ -295,6 +295,146 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   padding: 0.8rem;
 }
 
+/* ---------------- Result cards (rendered inside the dark console area) ---------------- */
+#sim-app .qwebr-output-code-area .rs-section-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+  margin: 1.2rem 0 0.6rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0.4rem 0 1.2rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-card {
+  font-family: 'Inter', sans-serif;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-compra {
+  border-left: 3px solid var(--accent);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-alquiler {
+  border-left: 3px solid var(--accent-2);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 0.7rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  color: #c4ccd9;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row strong {
+  color: #fff;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row-total {
+  border-bottom: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin-top: 0.2rem;
+  padding-top: 0.55rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-note {
+  margin-top: 0.7rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+#sim-app .qwebr-output-code-area .rs-reco-card {
+  font-family: 'Inter', sans-serif;
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  margin: 0.6rem 0 1.2rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#sim-app .qwebr-output-code-area .rs-badge {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-comprar {
+  background: rgba(46, 134, 193, 0.25);
+  color: #7fc1ec;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-alquilar {
+  background: rgba(39, 174, 96, 0.25);
+  color: #6fe0a0;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-empate {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e8edf5;
+}
+
+#sim-app .qwebr-output-code-area .rs-reco-detail {
+  font-size: 0.9rem;
+  color: #e8edf5;
+  line-height: 1.5;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-card {
+  font-family: 'Inter', sans-serif;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  margin: 0.4rem 0 1.2rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
 .callout {
   border-radius: var(--radius) !important;
   box-shadow: var(--shadow);

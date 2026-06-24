@@ -455,29 +455,11 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   total_pagado_alquiler <- alquiler_mensual_usd * 12 * plazo_anos
   costo_inicial_alquiler <- alquiler_mensual_usd * (deposito_meses + comision_meses)
 
-  cat("================================================================\n")
-  cat("              RESUMEN RAPIDO (cuentas simples, sin simulacion)\n")
-  cat("================================================================\n\n")
-  cat("   Estos numeros NO incluyen crisis, perdida de empleo, ni\n")
-  cat("   variaciones del mercado: son la cuenta directa si todo\n")
-  cat("   se mantiene estable durante todo el periodo.\n\n")
-  cat("   COMPRANDO:\n")
-  cat(sprintf("      Pago inicial (anticipo + escritura): $%s USD\n",
-              format(round(costo_inicial_compra), big.mark = ",")))
-  cat(sprintf("      Cuota mensual del credito:           $%s USD/mes\n",
-              format(round(cuota_mensual_credito), big.mark = ",")))
-  cat(sprintf("      Total pagado en %d anos de cuotas:    $%s USD\n",
-              plazo_anos, format(round(total_pagado_credito), big.mark = ",")))
-  cat("      Al terminar de pagar, la propiedad es tuya.\n\n")
-  cat("   ALQUILANDO:\n")
-  cat(sprintf("      Pago inicial (deposito + comision):  $%s USD\n",
-              format(round(costo_inicial_alquiler), big.mark = ",")))
-  cat(sprintf("      Alquiler mensual:                    $%s USD/mes\n",
-              format(round(alquiler_mensual_usd), big.mark = ",")))
-  cat(sprintf("      Total pagado en %d anos de alquiler:  $%s USD\n",
-              plazo_anos, format(round(total_pagado_alquiler), big.mark = ",")))
-  cat("      Al terminar, no sos dueno de nada, pero pudiste\n")
-  cat("      invertir lo que no gastaste de entrada ni en cuotas.\n\n")
+  cat(sprintf(
+    "@@RESUMEN@@plazo=%d|compra_inicial=%.0f|compra_cuota=%.0f|compra_total=%.0f|alquiler_inicial=%.0f|alquiler_cuota=%.0f|alquiler_total=%.0f@@\n",
+    plazo_anos, costo_inicial_compra, cuota_mensual_credito, total_pagado_credito,
+    costo_inicial_alquiler, alquiler_mensual_usd, total_pagado_alquiler
+  ))
 
   # Run simulation
   resultados <- ejecutar_simulacion_completa(params)
@@ -505,50 +487,33 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   cat("================================================================\n")
   cat("           RESULTADOS DE LA SIMULACION (con riesgos e incertidumbre)\n")
   cat("================================================================\n\n")
-  
+
   if (prob_compra_gana > 0.6) {
-    cat("------------------------------------------------------------\n")
-    cat("       RECOMENDACION: COMPRAR                               \n")
-    cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Terminarias con aproximadamente $%s USD mas\n", format(round(abs(diferencia_media)), big.mark=",")))
-    cat(sprintf("   Comprar te conviene en %.0f de cada 100 escenarios probados\n\n", prob_compra_gana * 100))
+    tipo_reco <- "comprar"
+    prob_reco <- prob_compra_gana * 100
   } else if (prob_compra_gana < 0.4) {
-    cat("------------------------------------------------------------\n")
-    cat("       RECOMENDACION: ALQUILAR                              \n")
-    cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Terminarias con aproximadamente $%s USD mas\n", format(round(abs(diferencia_media)), big.mark=",")))
-    cat(sprintf("   Alquilar te conviene en %.0f de cada 100 escenarios probados\n\n", (1-prob_compra_gana) * 100))
+    tipo_reco <- "alquilar"
+    prob_reco <- (1 - prob_compra_gana) * 100
   } else {
-    cat("------------------------------------------------------------\n")
-    cat("       RESULTADO: AMBAS OPCIONES SON SIMILARES              \n")
-    cat("------------------------------------------------------------\n")
-    cat(sprintf("\n   Comprar te conviene en %.0f de cada 100 escenarios probados\n", prob_compra_gana * 100))
-    cat(sprintf("   Alquilar te conviene en %.0f de cada 100 escenarios probados\n\n", (1-prob_compra_gana) * 100))
+    tipo_reco <- "empate"
+    prob_reco <- prob_compra_gana * 100
   }
 
-  cat("------------------------------------------------------------\n")
-  cat("                 TU CONFIGURACION\n")
-  cat("------------------------------------------------------------\n")
-  cat(sprintf("   Ahorros: $%s    |    Salario: $%s/mes\n", 
-              format(ahorros_actuales_usd, big.mark=","), format(salario_mensual_usd, big.mark=",")))
-  cat(sprintf("   Propiedad: $%s  |    Credito: $%s a %d anos\n",
-              format(valor_propiedad_usd, big.mark=","), format(round(params$monto_credito_usd), big.mark=","), plazo_anos))
-  cat(sprintf("   Alquiler: $%s/mes   |    Ubicacion: %s\n\n", format(alquiler_mensual_usd, big.mark=","), ubicacion))
-  
-  cat("------------------------------------------------------------\n")
-  cat(sprintf("            PATRIMONIO ESTIMADO EN %d ANOS\n", plazo_anos))
-  cat("------------------------------------------------------------\n\n")
-  
-  cat("   COMPRA:\n")
-  cat(sprintf("      Lo mas probable:         $%s USD\n", format(round(s_compra$media), big.mark=",")))
-  cat(sprintf("      Rango normal de resultados: $%s - $%s USD\n", format(round(s_compra$q10), big.mark=","), format(round(s_compra$q90), big.mark=",")))
-  cat(sprintf("      Si te va muy mal:        $%s USD\n\n", format(round(s_compra$peor_5pct), big.mark=",")))
+  cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f@@\n",
+              tipo_reco, abs(diferencia_media), prob_reco, (1 - prob_compra_gana) * 100))
 
-  cat("   ALQUILER:\n")
-  cat(sprintf("      Lo mas probable:         $%s USD\n", format(round(s_alquiler$media), big.mark=",")))
-  cat(sprintf("      Rango normal de resultados: $%s - $%s USD\n", format(round(s_alquiler$q10), big.mark=","), format(round(s_alquiler$q90), big.mark=",")))
-  cat(sprintf("      Si te va muy mal:        $%s USD\n\n", format(round(s_alquiler$peor_5pct), big.mark=",")))
-  
+  cat(sprintf(
+    "@@CONFIGURACION@@ahorros=%.0f|salario=%.0f|propiedad=%.0f|credito=%.0f|plazo=%d|alquiler=%.0f|ubicacion=%s@@\n",
+    ahorros_actuales_usd, salario_mensual_usd, valor_propiedad_usd, params$monto_credito_usd,
+    plazo_anos, alquiler_mensual_usd, ubicacion
+  ))
+
+  cat(sprintf(
+    "@@PATRIMONIO@@plazo=%d|compra_media=%.0f|compra_q10=%.0f|compra_q90=%.0f|compra_peor=%.0f|alquiler_media=%.0f|alquiler_q10=%.0f|alquiler_q90=%.0f|alquiler_peor=%.0f@@\n",
+    plazo_anos, s_compra$media, s_compra$q10, s_compra$q90, s_compra$peor_5pct,
+    s_alquiler$media, s_alquiler$q10, s_alquiler$q90, s_alquiler$peor_5pct
+  ))
+
   cat("================================================================\n")
   cat("                       GRAFICOS\n")
   cat("================================================================\n\n")
@@ -812,9 +777,99 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     ].join("\n");
   }
 
+  // Parses a "@@TAG@@key=val|key=val@@" marker line into {tag, fields}.
+  function parseCardMarker(text) {
+    const m = text.match(/^@@([A-Z]+)@@(.*)@@$/);
+    if (!m) return null;
+    const fields = {};
+    m[2].split("|").forEach(function (pair) {
+      const i = pair.indexOf("=");
+      if (i > -1) fields[pair.slice(0, i)] = pair.slice(i + 1);
+    });
+    return { tag: m[1], fields: fields };
+  }
+
+  function usd(n) {
+    return "$" + Math.round(Number(n)).toLocaleString("es-AR") + " USD";
+  }
+
+  function renderResumenCard(f) {
+    return (
+      '<div class="rs-card-grid">' +
+        '<div class="rs-card rs-card-compra">' +
+          '<div class="rs-card-title">Comprando</div>' +
+          '<div class="rs-card-row"><span>Pago inicial (anticipo + escritura)</span><strong>' + usd(f.compra_inicial) + "</strong></div>" +
+          '<div class="rs-card-row"><span>Cuota mensual del credito</span><strong>' + usd(f.compra_cuota) + "/mes</strong></div>" +
+          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' anos</span><strong>' + usd(f.compra_total) + "</strong></div>" +
+          '<div class="rs-card-note">Al terminar de pagar, la propiedad es tuya.</div>' +
+        "</div>" +
+        '<div class="rs-card rs-card-alquiler">' +
+          '<div class="rs-card-title">Alquilando</div>' +
+          '<div class="rs-card-row"><span>Pago inicial (deposito + comision)</span><strong>' + usd(f.alquiler_inicial) + "</strong></div>" +
+          '<div class="rs-card-row"><span>Alquiler mensual</span><strong>' + usd(f.alquiler_cuota) + "/mes</strong></div>" +
+          '<div class="rs-card-row rs-card-row-total"><span>Total pagado en ' + f.plazo + ' anos</span><strong>' + usd(f.alquiler_total) + "</strong></div>" +
+          '<div class="rs-card-note">No sos dueno de nada, pero pudiste invertir lo que no gastaste.</div>' +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderRecomendacionCard(f) {
+    const labels = { comprar: "RECOMENDACION: COMPRAR", alquilar: "RECOMENDACION: ALQUILAR", empate: "AMBAS OPCIONES SON SIMILARES" };
+    const cls = { comprar: "rs-badge-comprar", alquilar: "rs-badge-alquilar", empate: "rs-badge-empate" };
+    const tipo = f.tipo in labels ? f.tipo : "empate";
+    const detalle = tipo === "empate"
+      ? "Comprar te conviene en " + f.prob + " de cada 100 escenarios probados, alquilar en " + f.prob_alquiler + "."
+      : "Terminarias con aproximadamente " + usd(f.diferencia) + " mas. Te conviene en " + f.prob + " de cada 100 escenarios probados.";
+    return (
+      '<div class="rs-reco-card">' +
+        '<div class="rs-badge ' + cls[tipo] + '">' + labels[tipo] + "</div>" +
+        '<div class="rs-reco-detail">' + detalle + "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderConfiguracionCard(f) {
+    return (
+      '<div class="rs-config-card">' +
+        '<div class="rs-config-item"><span>Ahorros</span><strong>' + usd(f.ahorros) + "</strong></div>" +
+        '<div class="rs-config-item"><span>Salario</span><strong>' + usd(f.salario) + "/mes</strong></div>" +
+        '<div class="rs-config-item"><span>Propiedad</span><strong>' + usd(f.propiedad) + "</strong></div>" +
+        '<div class="rs-config-item"><span>Credito</span><strong>' + usd(f.credito) + " a " + f.plazo + " anos</strong></div>" +
+        '<div class="rs-config-item"><span>Alquiler</span><strong>' + usd(f.alquiler) + "/mes</strong></div>" +
+        '<div class="rs-config-item"><span>Ubicacion</span><strong>' + f.ubicacion + "</strong></div>" +
+      "</div>"
+    );
+  }
+
+  function renderPatrimonioCard(f) {
+    function col(titulo, prefix) {
+      return (
+        '<div class="rs-card">' +
+          '<div class="rs-card-title">' + titulo + "</div>" +
+          '<div class="rs-card-row"><span>Lo mas probable</span><strong>' + usd(f[prefix + "_media"]) + "</strong></div>" +
+          '<div class="rs-card-row"><span>Rango normal de resultados</span><strong>' + usd(f[prefix + "_q10"]) + " - " + usd(f[prefix + "_q90"]) + "</strong></div>" +
+          '<div class="rs-card-row"><span>Si te va muy mal</span><strong>' + usd(f[prefix + "_peor"]) + "</strong></div>" +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="rs-section-label">Patrimonio estimado en ' + f.plazo + " anos</div>" +
+      '<div class="rs-card-grid">' + col("Compra", "compra") + col("Alquiler", "alquiler") + "</div>"
+    );
+  }
+
+  const CARD_RENDERERS = {
+    RESUMEN: renderResumenCard,
+    RECOMENDACION: renderRecomendacionCard,
+    CONFIGURACION: renderConfiguracionCard,
+    PATRIMONIO: renderPatrimonioCard
+  };
+
   // The R console output lands as one big HTML blob (lines joined by <br>)
   // inside #sim-app .qwebr-output-code-area pre. Reclassify each line as a
-  // heading / divider / plain line so it can be styled like the rest of the page.
+  // heading / divider / plain line (or a styled card, for lines emitted as
+  // "@@TAG@@key=val|...@@" markers) so it can be styled like the rest of the page.
   function beautifyOutput() {
     const area = document.querySelector("#sim-app .qwebr-output-code-area");
     if (!area) return;
@@ -824,6 +879,10 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const lines = target.innerHTML.split(/<br\s*\/?>/i);
     target.innerHTML = lines.map(function (line) {
       const text = line.replace(/<[^>]*>/g, "").trim();
+      const marker = parseCardMarker(text);
+      if (marker && CARD_RENDERERS[marker.tag]) {
+        return CARD_RENDERERS[marker.tag](marker.fields);
+      }
       if (/^=+$/.test(text)) return '<div class="rs-rule rs-rule-strong"></div>';
       if (/^-+$/.test(text)) return '<div class="rs-rule"></div>';
       if (text && /[A-ZÁÉÍÓÚÑ]/.test(text) && text === text.toUpperCase()) {
