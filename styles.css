@@ -536,12 +536,49 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   font-size: 0.9rem;
 }
 
+/* ---------------- Callouts (expandable details / disclaimer) ---------------- */
 .callout {
   border-radius: var(--radius) !important;
+  overflow: hidden;
   box-shadow: var(--shadow);
-  background: var(--card) !important;
+  background: #11151c !important;
+  border-right-color: rgba(255, 255, 255, 0.1) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.callout-header {
+  background-color: #11151c !important;
 }
 
 .callout-body-container {
-  background: var(--card);
+  background: #11151c;
+}
+
+.callout-title-container {
+  color: #fff;
+  opacity: 1 !important;
+}
+
+.callout-body-container,
+.callout-body-container p,
+.callout-body-container li,
+.callout-body-container dt,
+.callout-body-container dd {
+  color: #c4ccd9;
+}
+
+/* The note/warning type icons and collapse chevron are baked-in dark SVGs
+   (data-uri background-images), invisible against a dark callout body, so
+   invert the ones that aren't already a visible color on dark (the warning
+   icon is amber and stays untouched - already visible). */
+.callout-note .callout-icon::before,
+.callout-toggle::before {
+  filter: invert(1);
+}
+
+/* Keep the warning callout's left border + icon a loud amber so it still
+   reads as "pay attention to this" against the dark theme. */
+.callout-warning.callout {
+  border-left-color: #f39c12 !important;
 }
