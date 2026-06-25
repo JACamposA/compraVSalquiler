@@ -1,7 +1,7 @@
 ---
 title: "Simulador de Vivienda Argentina"
-subtitle: "Comprar con UVA vs Alquilar - Análisis Monte Carlo"
-format: 
+subtitle: "Comprar con UVA vs Alquilar e Invertir - Análisis Monte Carlo"
+format:
   html:
     theme: flatly
     toc: false
@@ -15,8 +15,8 @@ webr:
 
 ```{=html}
 <div class="app-hero">
-  <h1>Comprar con UVA vs. Alquilar</h1>
-  <p>Simulador Monte Carlo para Argentina — ajusta los controles y descubre qué conviene más en tu caso.</p>
+  <h1>Comprar con UVA vs. Alquilar e Invertir</h1>
+  <p>Mirá miles de futuros económicos posibles y descubrí si te conviene más comprar o alquilar.</p>
 </div>
 ```
 
@@ -438,19 +438,11 @@ tema_oscuro <- function(base_size = 12) {
       panel.grid.minor = element_line(colour = "#FFFFFF0D", linewidth = 0.3),
       text = element_text(colour = "#e8edf5"),
       plot.title = element_text(colour = "#ffffff", face = "bold", size = rel(1.15), hjust = 0, margin = margin(b = 4)),
-      plot.subtitle = element_text(colour = "#c4ccd9", size = rel(0.85), hjust = 0, margin = margin(b = 10)),
       axis.text = element_text(colour = "#c4ccd9"),
       axis.title = element_text(colour = "#e8edf5"),
       legend.text = element_text(colour = "#e8edf5"),
-      legend.title = element_text(colour = "#e8edf5"),
-      plot.caption = element_text(colour = "#8d96a8", size = rel(0.78), hjust = 0, lineheight = 1.25, margin = margin(t = 10))
+      legend.title = element_text(colour = "#e8edf5")
     )
-}
-
-# Wraps long labels to multiple lines so they never get clipped by the
-# plot's pixel width, no matter how long the underlying text is.
-wrap_label <- function(texto, ancho = 48) {
-  paste(strwrap(texto, width = ancho), collapse = "\n")
 }
 
 # ============================================================
@@ -461,10 +453,6 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                                 alquiler_mensual_usd, deposito_meses, comision_meses,
                                 ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
                                 n_simulaciones) {
-  
-  cat("\n")
-  cat("Procesando simulación...\n")
-  cat("Simulando", n_simulaciones, "escenarios para", plazo_anos, "años...\n\n")
   
   # Build params
  params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
@@ -523,8 +511,6 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   s_alquiler <- stats_finales %>% filter(tipo_clean == "Alquiler")
   
   # Display results
-  cat("================================================================\n")
-  cat("           RESULTADOS DE LA SIMULACIÓN (con riesgos e incertidumbre)\n")
   cat("================================================================\n\n")
 
   if (prob_compra_gana > 0.6) {
@@ -553,8 +539,6 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     s_alquiler$media, s_alquiler$q10, s_alquiler$q90, s_alquiler$peor_5pct
   ))
 
-  cat(sprintf("@@SECCION@@texto=Gráficos@@\n"))
-
   # Prepare data for plots
   patrimonio_por_año <- resultados %>%
     group_by(año, tipo) %>%
@@ -571,16 +555,14 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   
   # Plot 1: Compra - Alquiler difference (the "verdict" chart, shown first)
   media_dif <- mean(diferencias$diferencia, na.rm = TRUE)
-  pct_compra_mejor <- mean(diferencias$diferencia > 0, na.rm = TRUE) * 100
   g_dif <- ggplot(diferencias, aes(x = diferencia / 1000)) +
     geom_histogram(fill = "#8a7cf5", alpha = 0.85, bins = 40) +
     geom_vline(xintercept = 0, linetype = "solid", color = "#ff6b6b", linewidth = 1.2) +
     geom_vline(xintercept = media_dif / 1000, linetype = "dashed", color = "#ffd43b", linewidth = 1) +
     labs(title = "¿Quién te conviene más: comprar o alquilar?",
-         subtitle = wrap_label(sprintf("A la derecha del 0 = te convino comprar (%.0f%% de los casos) | A la izquierda = te convino alquilar (%.0f%% de los casos)", pct_compra_mejor, 100-pct_compra_mejor)),
-         x = "Diferencia en tu patrimonio final (miles USD)", y = "Cantidad de simulaciones",
-         caption = wrap_label("Cada barra agrupa simulaciones según cuánto más (o menos) patrimonio terminaste teniendo por comprar en vez de alquilar. A la derecha de la línea roja, comprar te dejó con más plata en ese escenario; a la izquierda, te fue mejor alquilando.", 95)) +
+         x = "Diferencia en tu patrimonio final (miles USD)", y = "Cantidad de simulaciones") +
     tema_oscuro(12)
+  cat(sprintf("@@GRAFICOBLURB@@texto=El siguiente gráfico muestra la diferencia de patrimonio final entre comprar y alquilar en cada simulación: cada barra agrupa escenarios según cuánto más (o menos) patrimonio terminaste teniendo por comprar en vez de alquilar. A la derecha de la línea roja, comprar te dejó con más plata; a la izquierda, te fue mejor alquilando.@@\n"))
   print(g_dif)
 
   # Plot 2: patrimonio evolution over time (supporting context: shows how/why the gap grows)
@@ -592,10 +574,9 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     scale_fill_manual(values = c("Compra" = "#339af0", "Alquiler" = "#40c057")) +
     scale_y_continuous(labels = scales::label_dollar(suffix = "K")) +
     labs(title = "¿Cómo evoluciona tu patrimonio con el tiempo?",
-         subtitle = wrap_label("Línea = resultado típico | Banda oscura = la mitad de los casos | Banda clara = la gran mayoría de los casos"),
-         x = "Años transcurridos", y = "Patrimonio estimado (miles USD)", color = "Opción", fill = "Opción",
-         caption = wrap_label("Este gráfico muestra cómo crecería tu patrimonio a lo largo de los años en cada opción. La línea es el resultado más típico, y las bandas muestran qué tan distintos pueden ser los resultados según cómo se comporte la economía en el camino.", 95)) +
+         x = "Años transcurridos", y = "Patrimonio estimado (miles USD)", color = "Opción", fill = "Opción") +
     tema_oscuro(12) + theme(legend.position = "bottom")
+  cat(sprintf("@@GRAFICOBLURB@@texto=El siguiente gráfico muestra cómo crecería tu patrimonio a lo largo de los años en cada opción. La línea es el resultado más típico, y las bandas muestran qué tan distintos pueden ser los resultados según cómo se comporte la economía en el camino.@@\n"))
   print(g_evol)
 }
 
@@ -696,8 +677,11 @@ message("Motor de simulación cargado")
 
 </div>
 
+<div class="ahorros-warning" id="ahorros-warning"></div>
+
 <div class="run-bar">
 <button id="btn-calcular">Calcular</button>
+<span class="run-spinner" id="run-spinner" aria-hidden="true">🏠</span>
 <span class="run-status" id="run-status">Listo para calcular</span>
 </div>
 :::
@@ -802,12 +786,34 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     if (ubicacionEl && savedInputs.ubicacion !== undefined) ubicacionEl.value = savedInputs.ubicacion;
   }
 
+  // Warns when current savings can't actually cover the down payment plus
+  // closing costs (matches `gastos_escritura <- valor_propiedad_usd * 0.10`
+  // in construir_params()), since the simulation itself doesn't block that -
+  // it just floors the leftover-savings-to-invest at 0.
+  const ahorrosWarning = document.getElementById("ahorros-warning");
+
+  function checkAhorrosWarning() {
+    const ahorros = Number(document.getElementById(sliders.ahorros.id).value);
+    const propiedad = Number(document.getElementById(sliders.propiedad.id).value);
+    const enganchePct = Number(document.getElementById(sliders.enganche.id).value) / 100;
+    const costoInicial = propiedad * enganchePct + propiedad * 0.10;
+    const faltante = costoInicial - ahorros;
+    if (faltante > 0) {
+      ahorrosWarning.textContent = "Tus ahorros no alcanzan para el anticipo + gastos de escritura: te faltarían $" + Math.round(faltante).toLocaleString("en-US") + " USD.";
+      ahorrosWarning.classList.add("active");
+    } else {
+      ahorrosWarning.classList.remove("active");
+    }
+  }
+
   Object.keys(sliders).forEach(function (key) {
     const el = document.getElementById(sliders[key].id);
     if (!el) return;
     refreshLabel(key);
-    el.addEventListener("input", function () { refreshLabel(key); saveInputs(); });
+    el.addEventListener("input", function () { refreshLabel(key); saveInputs(); checkAhorrosWarning(); });
   });
+
+  checkAhorrosWarning();
 
   const ubicacionSelect = document.getElementById("sl-ubicacion");
   if (ubicacionSelect) ubicacionSelect.addEventListener("change", saveInputs);
@@ -924,8 +930,8 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     );
   }
 
-  function renderSeccionCard(f) {
-    return '<div class="rs-section-label">' + f.texto + "</div>";
+  function renderGraficoBlurbCard(f) {
+    return '<div class="rs-graph-blurb">' + escapeHtml(f.texto) + "</div>";
   }
 
   const CARD_RENDERERS = {
@@ -933,7 +939,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     RECOMENDACION: renderRecomendacionCard,
     CONFIGURACION: renderConfiguracionCard,
     PATRIMONIO: renderPatrimonioCard,
-    SECCION: renderSeccionCard
+    GRAFICOBLURB: renderGraficoBlurbCard
   };
 
   function escapeHtml(text) {
@@ -972,6 +978,26 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     }).join("");
   }
 
+  // The blurb cards rendered above land in the text console area (which is a
+  // separate DOM container from the graph area, populated independently by
+  // quarto-webr), so move each one into the graph area, directly before the
+  // chart it describes, matching emission order. quarto-webr bundles every
+  // plot from one chunk run into a single <figure> with one <canvas> per
+  // plot, rather than one figure per plot, so the blurbs are inserted before
+  // their matching canvas instead of before a (non-existent) per-plot figure.
+  function relocateGraphBlurbs() {
+    const codeArea = document.querySelector("#sim-app .qwebr-output-code-area");
+    const graphArea = document.querySelector("#sim-app .qwebr-output-graph-area");
+    if (!codeArea || !graphArea) return;
+    const blurbs = codeArea.querySelectorAll(".rs-graph-blurb");
+    const figure = graphArea.querySelector("figure.qwebr-canvas-image");
+    if (!figure) return;
+    const canvases = figure.querySelectorAll("canvas");
+    blurbs.forEach(function (blurb, i) {
+      if (canvases[i]) figure.insertBefore(blurb, canvases[i]);
+    });
+  }
+
   // quarto-webr renders each interactive chunk with a Monaco editor instance
   // stored in window.qwebrEditorInstances[id], and exposes a single global
   // qwebrExecuteCode(code, id, options) used by its own Run Code button.
@@ -985,9 +1011,13 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
 
   const btn = document.getElementById("btn-calcular");
   const status = document.getElementById("run-status");
+  const spinner = document.getElementById("run-spinner");
+  const spinnerIcons = ["🏠", "🏢", "🐷", "💵"];
 
   btn.addEventListener("click", async function () {
     btn.disabled = true;
+    spinner.textContent = spinnerIcons[Math.floor(Math.random() * spinnerIcons.length)];
+    spinner.classList.add("active");
     status.textContent = "Cargando motor de simulación...";
 
     if (window.qwebrInstance && typeof window.qwebrInstance.then === "function") {
@@ -998,6 +1028,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     if (!entry || typeof window.qwebrExecuteCode !== "function") {
       status.textContent = "El motor aún está cargando, intenta de nuevo en unos segundos.";
       btn.disabled = false;
+      spinner.classList.remove("active");
       return;
     }
 
@@ -1008,12 +1039,14 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     try {
       await window.qwebrExecuteCode(code, entry.id, entry.editor.__qwebrOptions);
       beautifyOutput();
+      relocateGraphBlurbs();
       status.textContent = "Resultados generados.";
     } catch (e) {
       status.textContent = "Ocurrió un error al calcular. Revisa 'Motor de simulación'.";
       console.error(e);
     } finally {
       btn.disabled = false;
+      spinner.classList.remove("active");
     }
   });
 })();
