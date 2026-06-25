@@ -376,6 +376,10 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   max-width: 100%;
 }
 
+#sim-app .qwebr-output-graph-area .qwebr-canvas-image-download-btn {
+  display: none !important;
+}
+
 #sim-app .qwebr-output-graph-area figcaption {
   font-size: 0.85rem;
   color: #8d96a8;
