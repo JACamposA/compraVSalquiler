@@ -21,7 +21,7 @@ body {
 
 @media (max-width: 767px) {
   body {
-    background-image: url('images/bg-mobile.png');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/bg-mobile.png');
     background-size: cover;
     background-position: top center;
     background-attachment: fixed;
@@ -30,7 +30,7 @@ body {
 
 @media (min-width: 768px) {
   body {
-    background-image: url('images/bg-desktop.png');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/bg-desktop.png');
     background-size: cover;
     background-position: top center;
     background-attachment: fixed;
@@ -42,9 +42,11 @@ body {
 }
 
 /* ---------------- Hero ---------------- */
+/* Dark, matching the app-card / console panels below it instead of the old bright gradient. */
 .app-hero {
-  background: var(--accent-grad);
-  color: #fff;
+  background: #11151c;
+  color: #e8edf5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   padding: 2.6rem 2.2rem;
   margin-bottom: 1.8rem;
@@ -53,11 +55,21 @@ body {
   overflow: hidden;
 }
 
+.app-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-grad);
+}
+
 .app-hero::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.18), transparent 60%);
+  background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.06), transparent 60%);
 }
 
 .app-hero h1 {
@@ -65,16 +77,23 @@ body {
   font-size: 2rem;
   margin: 0 0 0.35rem 0;
   letter-spacing: -0.02em;
+  color: #fff;
 }
 
 .app-hero p {
   margin: 0;
-  opacity: 0.92;
+  color: #8d96a8;
   font-size: 1.05rem;
 }
 
 title-block-header,
 .quarto-title-block {
+  display: none !important;
+}
+
+/* quarto-webr injects a "webR Code Links" / "View R History" widget into
+   #quarto-margin-sidebar, which only ever holds that widget on this page. */
+#quarto-margin-sidebar {
   display: none !important;
 }
 
@@ -200,10 +219,26 @@ select.app-select {
   color: #e8edf5;
 }
 
+.ahorros-warning {
+  display: none;
+  margin-top: 1.4rem;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #ffd966;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.ahorros-warning.active {
+  display: block;
+}
+
 /* ---------------- Run button ---------------- */
 .run-bar {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 1rem;
   margin-top: 1.8rem;
 }
@@ -224,6 +259,17 @@ select.app-select {
 #btn-calcular:hover { transform: translateY(-1px); }
 #btn-calcular:disabled { opacity: 0.6; cursor: progress; transform: none; }
 
+.run-spinner {
+  display: none;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.run-spinner.active {
+  display: inline-block;
+  animation: qwebr-house-spin 1.2s linear infinite;
+}
+
 .run-status {
   font-size: 0.9rem;
   color: #8d96a8;
@@ -241,6 +287,20 @@ select.app-select {
 #sim-app .qwebr-editor-toolbar,
 #sim-app .qwebr-editor {
   display: none;
+}
+
+/* quarto-webr's loading box (for the hidden setup chunk, rendered right
+   after the hero rather than inside #sim-app) reports raw package-install
+   progress ("Installing package 3 out of 6: dplyr"). The user is busy with
+   the sliders during the few seconds this takes, so just hide it outright
+   rather than showing any loading indicator. */
+.qwebr-non-interactive-loading-container {
+  display: none !important;
+}
+
+@keyframes qwebr-house-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ---------------- Output styling ---------------- */
@@ -316,11 +376,28 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   max-width: 100%;
 }
 
+#sim-app .qwebr-output-graph-area .qwebr-canvas-image-download-btn {
+  display: none !important;
+}
+
 #sim-app .qwebr-output-graph-area figcaption {
   font-size: 0.85rem;
   color: #8d96a8;
   text-align: center;
   margin-top: 0.4rem;
+}
+
+#sim-app .qwebr-output-graph-area .rs-graph-blurb {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #c4ccd9;
+  line-height: 1.5;
+  background: #11151c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  margin: 0.8rem 0 0.6rem 0;
 }
 
 /* ---------------- Result cards (rendered inside the dark console area) ---------------- */
@@ -463,12 +540,49 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   font-size: 0.9rem;
 }
 
+/* ---------------- Callouts (expandable details / disclaimer) ---------------- */
 .callout {
   border-radius: var(--radius) !important;
+  overflow: hidden;
   box-shadow: var(--shadow);
-  background: var(--card) !important;
+  background: #11151c !important;
+  border-right-color: rgba(255, 255, 255, 0.1) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.callout-header {
+  background-color: #11151c !important;
 }
 
 .callout-body-container {
-  background: var(--card);
+  background: #11151c;
+}
+
+.callout-title-container {
+  color: #fff;
+  opacity: 1 !important;
+}
+
+.callout-body-container,
+.callout-body-container p,
+.callout-body-container li,
+.callout-body-container dt,
+.callout-body-container dd {
+  color: #c4ccd9;
+}
+
+/* The note/warning type icons and collapse chevron are baked-in dark SVGs
+   (data-uri background-images), invisible against a dark callout body, so
+   invert the ones that aren't already a visible color on dark (the warning
+   icon is amber and stays untouched - already visible). */
+.callout-note .callout-icon::before,
+.callout-toggle::before {
+  filter: invert(1);
+}
+
+/* Keep the warning callout's left border + icon a loud amber so it still
+   reads as "pay attention to this" against the dark theme. */
+.callout-warning.callout {
+  border-left-color: #f39c12 !important;
 }

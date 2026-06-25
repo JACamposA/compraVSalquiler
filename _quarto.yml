@@ -3,6 +3,7 @@ project:
 
 website:
   title: "Simulador Vivienda"
+  favicon: images/favicon.svg
 
 format:
   html:
