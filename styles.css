@@ -133,6 +133,36 @@ title-block-header,
   display: inline-block;
 }
 
+/* ---------------- Mode toggle (Comprar vs Alquilar / Simulador de Inversión) ---------------- */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.mode-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #c4ccd9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.mode-toggle-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mode-toggle-btn.active {
+  background: var(--accent-grad);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px -6px rgba(46, 134, 193, 0.55);
+}
+
 /* ---------------- Slider form ---------------- */
 .slider-grid {
   display: grid;
