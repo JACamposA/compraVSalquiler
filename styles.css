@@ -809,3 +809,58 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
 .callout-warning.callout {
   border-left-color: #f39c12 !important;
 }
+
+/* Avanzado toggle button */
+.avanzado-toggle {
+  background: none;
+  border: 1px solid #ffffff22;
+  color: #a0aab8;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin: 4px 0 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.avanzado-toggle:hover,
+.avanzado-toggle.avanzado-open {
+  background: #ffffff11;
+  color: #e8edf5;
+}
+
+/* Stress card */
+.rs-stress-card {
+  background: #161b26;
+  border: 1px solid #2a3040;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.rs-stress-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7a99;
+  margin-bottom: 10px;
+}
+.rs-stress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.rs-stress-label {
+  font-size: 0.88rem;
+  color: #c4ccd9;
+}
+.rs-stress-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.rs-stress-hint {
+  font-size: 0.78rem;
+  color: #6b7a99;
+  margin-top: 8px;
+  line-height: 1.45;
+}
