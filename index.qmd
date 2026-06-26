@@ -1002,7 +1002,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     slidersComprar.style.display = mode === "comprar" ? "" : "none";
     slidersInvertir.style.display = mode === "invertir" ? "" : "none";
     status.textContent = "Listo para calcular";
-    checkAhorrosWarning();
+    updateDiaUno();
     // Results from the other mode don't apply here - clear them rather than
     // leaving e.g. investment cards sitting under the buy/rent sliders.
     const codeArea = document.querySelector("#sim-app .qwebr-output-code-area");
