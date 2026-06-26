@@ -482,10 +482,22 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   total_pagado_alquiler <- alquiler_mensual_usd * 12 * plazo_anos
   costo_inicial_alquiler <- alquiler_mensual_usd * (deposito_meses + comision_meses)
 
+  ratio_precio_alquiler  <- round(valor_propiedad_usd / alquiler_mensual_usd)
+  ratio_cuota_ingreso    <- costo_mensual_compra / salario_mensual_usd * 100
+  diferencia_mensual     <- costo_mensual_compra - alquiler_mensual_usd
+  emergencia_post_compra <- ahorros_actuales_usd - costo_inicial_compra
+  meses_emergencia       <- if (salario_mensual_usd > 0) emergencia_post_compra / salario_mensual_usd else 0
+
   cat(sprintf(
     "@@RESUMEN@@plazo=%d|compra_inicial=%.0f|compra_cuota=%.0f|compra_gastos=%.0f|compra_total=%.0f|alquiler_inicial=%.0f|alquiler_cuota=%.0f|alquiler_total=%.0f@@\n",
     plazo_anos, costo_inicial_compra, cuota_mensual_credito, gastos_propietario_mensual, total_pagado_credito,
     costo_inicial_alquiler, alquiler_mensual_usd, total_pagado_alquiler
+  ))
+
+  cat(sprintf(
+    "@@INDICADORES@@ratio_pr=%.0f|cuota_ingreso=%.1f|diferencia_mensual=%.0f|emergencia=%.0f|meses_emergencia=%.1f@@\n",
+    ratio_precio_alquiler, ratio_cuota_ingreso, diferencia_mensual,
+    max(0, emergencia_post_compra), max(0, meses_emergencia)
   ))
 
   # Run simulation
@@ -500,6 +512,16 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   final_alquiler <- resultados_final$patrimonio[resultados_final$tipo_clean == "Alquiler"]
   prob_compra_gana <- mean(final_compra > final_alquiler, na.rm = TRUE)
   diferencia_media <- mean(final_compra - final_alquiler, na.rm = TRUE)
+
+  # Break-even year: first year where majority of simulations have compra > alquiler
+  prob_por_año <- resultados %>%
+    mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler")) %>%
+    dplyr::select(año, simulacion, tipo_clean, patrimonio) %>%
+    pivot_wider(names_from = tipo_clean, values_from = patrimonio) %>%
+    group_by(año) %>%
+    summarise(prob_compra = mean(Compra > Alquiler, na.rm = TRUE), .groups = "drop")
+  breakeven_ano <- prob_por_año %>% filter(prob_compra > 0.5, año > 0) %>% slice(1) %>% pull(año)
+  breakeven_ano <- if (length(breakeven_ano) == 0) NA_integer_ else breakeven_ano
   
   stats_finales <- resultados_final %>%
     group_by(tipo_clean) %>%
@@ -526,6 +548,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
 
   cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f@@\n",
               tipo_reco, abs(diferencia_media), prob_reco, (1 - prob_compra_gana) * 100))
+  cat(sprintf("@@BREAKEVEN@@ano=%s@@\n",
+              ifelse(is.na(breakeven_ano), "nunca", as.character(breakeven_ano))))
 
   cat(sprintf(
     "@@CONFIGURACION@@ahorros=%.0f|salario=%.0f|propiedad=%.0f|credito=%.0f|plazo=%d|alquiler=%.0f|ubicacion=%s@@\n",
@@ -576,6 +600,12 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     labs(title = "¿Cómo evoluciona tu patrimonio con el tiempo?",
          x = "Años transcurridos", y = "Patrimonio estimado (miles USD)", color = "Opción", fill = "Opción") +
     tema_oscuro(12) + theme(legend.position = "bottom")
+  if (!is.na(breakeven_ano)) {
+    g_evol <- g_evol +
+      geom_vline(xintercept = breakeven_ano, linetype = "dashed", color = "#ffd43b", linewidth = 0.9, alpha = 0.8) +
+      annotate("text", x = breakeven_ano + 0.4, y = max(patrimonio_por_año$q90) / 1000 * 0.97,
+               label = paste0("año ", breakeven_ano), color = "#ffd43b", size = 3.2, hjust = 0)
+  }
   cat(sprintf("@@GRAFICOBLURB@@texto=El siguiente gráfico muestra cómo crecería tu patrimonio a lo largo de los años en cada opción. La línea es el resultado más típico, y las bandas muestran qué tan distintos pueden ser los resultados según cómo se comporte la economía en el camino.@@\n"))
   print(g_evol)
 }
@@ -710,7 +740,7 @@ message("Motor de simulación cargado")
 <div class="slider-group">
 <label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
 <input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
-<span class="hint">Tasa real anual del crédito</span>
+<span class="hint">Tasa real anual del crédito &mdash; tu cuota inicial se ajusta por inflación todos los meses: si la inflación anual es 80%, tu cuota sube ~80%.</span>
 </div>
 
 <div class="slider-group">
@@ -1132,9 +1162,57 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     );
   }
 
+  function renderIndicadoresCard(f) {
+    const ratio = Number(f.ratio_pr);
+    const cuota = Number(f.cuota_ingreso);
+    const dif = Number(f.diferencia_mensual);
+    const emergencia = Number(f.emergencia);
+    const meses = Number(f.meses_emergencia);
+
+    const ratioColor = ratio < 180 ? '#6fe0a0' : ratio < 250 ? '#ffd43b' : '#ff6b6b';
+    const ratioHint = ratio < 180 ? 'Relación favorable para comprar' : ratio < 250 ? 'Relación moderada' : 'Propiedad cara relativa al alquiler';
+
+    const cuotaColor = cuota < 25 ? '#6fe0a0' : cuota < 35 ? '#ffd43b' : '#ff6b6b';
+    const cuotaHint = cuota < 25 ? 'Dentro del umbral bancario (~25-30%)' : cuota < 35 ? 'Cerca del límite del banco' : 'Por encima del máximo habitual del banco';
+
+    const difSign = dif >= 0 ? '+' : '-';
+    const difText = difSign + '$' + Math.round(Math.abs(dif)).toLocaleString('en-US') + ' USD/mes vs. alquilar';
+
+    const emColor = meses >= 3 ? '#6fe0a0' : meses >= 1 ? '#ffd43b' : '#ff6b6b';
+    const emText = emergencia <= 0
+      ? 'Sin reserva tras la compra'
+      : '$' + Math.round(emergencia).toLocaleString('en-US') + ' USD (' + meses.toFixed(1) + ' meses de salario)';
+    const emHint = meses < 3
+      ? 'Recomendamos al menos 3 meses de salario como reserva'
+      : 'Suficiente como colchón de emergencia';
+
+    function ind(label, value, color, hint) {
+      return '<div class="rs-ind-item">' +
+        '<span class="rs-ind-label">' + escapeHtml(label) + '</span>' +
+        '<span class="rs-ind-value" style="color:' + color + '">' + escapeHtml(value) + '</span>' +
+        '<span class="rs-ind-hint">' + escapeHtml(hint) + '</span>' +
+        '</div>';
+    }
+    return '<div class="rs-indicadores-card">' +
+      ind('Ratio precio / alquiler', ratio + ' meses', ratioColor, ratioHint) +
+      ind('Cuota / ingreso', cuota.toFixed(1) + '%', cuotaColor, cuotaHint) +
+      ind('Costo mensual extra', difText, '#e8edf5', 'Diferencia de gasto mensual entre comprar y alquilar') +
+      ind('Reserva post-compra', emText, emColor, emHint) +
+      '</div>';
+  }
+
+  function renderBreakevenCard(f) {
+    if (f.ano === 'nunca') {
+      return '<div class="rs-breakeven-card">En la mayoría de los escenarios, alquilar e invertir supera a comprar durante todo el período analizado.</div>';
+    }
+    return '<div class="rs-breakeven-card">A partir del <strong>año ' + escapeHtml(f.ano) + '</strong>, comprar empieza a ganarle a alquilar en la mayoría de los escenarios simulados.</div>';
+  }
+
   const CARD_RENDERERS = {
     RESUMEN: renderResumenCard,
     RECOMENDACION: renderRecomendacionCard,
+    BREAKEVEN: renderBreakevenCard,
+    INDICADORES: renderIndicadoresCard,
     CONFIGURACION: renderConfiguracionCard,
     PATRIMONIO: renderPatrimonioCard,
     GRAFICOBLURB: renderGraficoBlurbCard,
