@@ -1979,39 +1979,14 @@ Simulador de Inversión
 <div class="slider-group">
 <p><label>Anticipo <span id="val-enganche" class="slider-value">20%</span></label> <input type="range" id="sl-enganche" min="0" max="80" step="1" value="20"> <span class="hint">% del valor de la propiedad que pagas de entrada (el resto es el crédito UVA)</span></p>
 </div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Gastos de escritura <span id="val-escritura" class="slider-value">10%</span></label> <input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10"> <span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span></p>
-</div>
 <div class="slider-group">
 <p><label>Plazo del crédito <span id="val-plazo" class="slider-value">25 años</span></label> <input type="range" id="sl-plazo" min="5" max="35" step="1" value="25"> <span class="hint">Duración del crédito UVA</span></p>
 </div>
 <div class="slider-group">
-<p><label>Años que planeás quedarte <span id="val-horizonte" class="slider-value">15 años</span></label> <input type="range" id="sl-horizonte" min="1" max="35" step="1" value="15"> <span class="hint">El análisis final se muestra en este año — si vendés antes del fin del crédito, los resultados cambian bastante.</span></p>
-</div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Tasa real UVA <span id="val-tasa_uva" class="slider-value">6%</span></label> <input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6"> <span class="hint">Tasa real anual del crédito — tu cuota inicial se ajusta por inflación todos los meses: si la inflación anual es 80%, tu cuota sube ~80%.</span></p>
-</div>
-<div class="slider-group">
 <p><label>Alquiler mensual actual <span id="val-alquiler" class="slider-value">$437</span></label> <input type="range" id="sl-alquiler" min="100" max="3000" step="10" value="437"> <span class="hint">En USD</span></p>
 </div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Depósito en garantía <span id="val-deposito" class="slider-value">3</span></label> <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3"> <span class="hint">Meses de alquiler que te piden como depósito al firmar</span></p>
-</div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Comisión inmobiliaria <span id="val-comision" class="slider-value">1 mes</span></label> <input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1"> <span class="hint">Meses de comisión al alquilar</span></p>
-</div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Crecimiento real del salario <span id="val-crecimiento" class="slider-value">8%</span></label> <input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8"> <span class="hint">Por año, por encima de inflación</span></p>
-</div>
 <div class="slider-group">
-<label>Rendimiento de inversiones <span id="val-rendimiento" class="slider-value">7%</span></label>
-<div id="preset-rendimiento" class="preset-btns">
-<p><button type="button" class="preset-btn" data-val="3">Conservador 3%</button> <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button> <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button></p>
-</div>
-<p><input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7"> <span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span></p>
-</div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Precisión del cálculo <span id="val-nsim" class="slider-value">500</span></label> <input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500"> <span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span></p>
+<p><label>Expensas mensuales <span id="val-expensas" class="slider-value">$200</span></label> <input type="range" id="sl-expensas" min="50" max="800" step="25" value="200"> <span class="hint">En CABA, expensas típicas de un 2-amb oscilan entre $200-$400 USD/mes</span></p>
 </div>
 <div class="slider-group">
 <p><label>Ubicación</label> <select class="app-select" id="sl-ubicacion"> <option value="CABA">CABA</option> <option value="GBA" selected="">GBA</option> </select> <span class="hint">CABA: ~3% apreciación anual | GBA: ~0.5%</span></p>
@@ -2024,14 +1999,41 @@ Simulador de Inversión
 <p><input type="hidden" id="sl-escenario" value="base"> <span class="hint">Continuidad: inflación ~4% mensual | Estabilización: ~2% | Hiperinflación: ~10%</span></p>
 </div>
 <div class="slider-group">
-<p><label>Expensas mensuales <span id="val-expensas" class="slider-value">$200</span></label> <input type="range" id="sl-expensas" min="50" max="800" step="25" value="200"> <span class="hint">En CABA, expensas típicas de un 2-amb oscilan entre $200-$400 USD/mes</span></p>
+<label>Rendimiento de inversiones <span id="val-rendimiento" class="slider-value">7%</span></label>
+<div id="preset-rendimiento" class="preset-btns">
+<p><button type="button" class="preset-btn" data-val="3">Conservador 3%</button> <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button> <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button></p>
 </div>
-<div class="slider-group slider-avanzado" style="display:none">
-<p><label>Sueldo declarado (AFIP) <span id="val-declarado" class="slider-value">$2,333</span></label> <input type="range" id="sl-declarado" min="500" max="10000" step="100" value="2333"> <span class="hint">Los bancos calculan la elegibilidad sobre el sueldo en recibo, no el real</span></p>
+<p><input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7"> <span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span></p>
+</div>
 </div>
 <button class="avanzado-toggle" id="avanzado-toggle">
 Configuración avanzada ▼
 </button>
+<div id="avanzado-panel" class="slider-grid avanzado-panel">
+<div class="slider-group">
+<p><label>Tasa real UVA <span id="val-tasa_uva" class="slider-value">6%</span></label> <input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6"> <span class="hint">Tasa real anual del crédito — la encontrás en la oferta del banco</span></p>
+</div>
+<div class="slider-group">
+<p><label>Años que planeás quedarte <span id="val-horizonte" class="slider-value">25 años</span></label> <input type="range" id="sl-horizonte" min="1" max="35" step="1" value="25"> <span class="hint">El análisis se muestra en este año. Por defecto coincide con el plazo del crédito.</span></p>
+</div>
+<div class="slider-group">
+<p><label>Gastos de escritura <span id="val-escritura" class="slider-value">10%</span></label> <input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10"> <span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span></p>
+</div>
+<div class="slider-group">
+<p><label>Depósito en garantía <span id="val-deposito" class="slider-value">3</span></label> <input type="range" id="sl-deposito" min="0" max="6" step="1" value="3"> <span class="hint">Meses de alquiler que te piden como depósito al firmar</span></p>
+</div>
+<div class="slider-group">
+<p><label>Comisión inmobiliaria <span id="val-comision" class="slider-value">1 mes</span></label> <input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1"> <span class="hint">Meses de comisión al alquilar</span></p>
+</div>
+<div class="slider-group">
+<p><label>Crecimiento real del salario <span id="val-crecimiento" class="slider-value">8%</span></label> <input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8"> <span class="hint">Por año, por encima de inflación</span></p>
+</div>
+<div class="slider-group">
+<p><label>Sueldo declarado (AFIP) <span id="val-declarado" class="slider-value">$2,333</span></label> <input type="range" id="sl-declarado" min="500" max="10000" step="100" value="2333"> <span class="hint">Los bancos calculan la elegibilidad sobre el sueldo en recibo, no el real</span></p>
+</div>
+<div class="slider-group">
+<p><label>Precisión del cálculo <span id="val-nsim" class="slider-value">500</span></label> <input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500"> <span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span></p>
+</div>
 </div>
 <div id="sliders-invertir" class="slider-grid" style="display:none">
 <div class="slider-group">
@@ -2258,23 +2260,22 @@ Calcular
   // Avanzado toggle
   let avanzadoOpen = false;
   const avanzadoBtn = document.getElementById('avanzado-toggle');
-  if (avanzadoBtn) {
+  const avanzadoPanel = document.getElementById('avanzado-panel');
+  if (avanzadoBtn && avanzadoPanel) {
     avanzadoBtn.addEventListener('click', function () {
       avanzadoOpen = !avanzadoOpen;
-      document.querySelectorAll('.slider-avanzado').forEach(function (el) {
-        el.style.display = avanzadoOpen ? '' : 'none';
-      });
+      avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
       avanzadoBtn.textContent = avanzadoOpen ? 'Configuración avanzada ▲' : 'Configuración avanzada ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
     });
   }
 
-  // Keep horizonte ≤ plazo
+  // When advanced is closed, horizonte tracks plazo automatically
   document.getElementById(sliders.plazo.id).addEventListener('input', function () {
     const plazoEl = document.getElementById(sliders.plazo.id);
     const horizEl = document.getElementById(sliders.horizonte.id);
     horizEl.max = plazoEl.value;
-    if (Number(horizEl.value) > Number(plazoEl.value)) {
+    if (!avanzadoOpen || Number(horizEl.value) > Number(plazoEl.value)) {
       horizEl.value = plazoEl.value;
       refreshLabel('horizonte');
     }

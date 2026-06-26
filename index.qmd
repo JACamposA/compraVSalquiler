@@ -829,28 +829,10 @@ message("Motor de simulación cargado")
 <span class="hint">% del valor de la propiedad que pagas de entrada (el resto es el crédito UVA)</span>
 </div>
 
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Gastos de escritura <span class="slider-value" id="val-escritura">10%</span></label>
-<input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10">
-<span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span>
-</div>
-
 <div class="slider-group">
 <label>Plazo del crédito <span class="slider-value" id="val-plazo">25 años</span></label>
 <input type="range" id="sl-plazo" min="5" max="35" step="1" value="25">
 <span class="hint">Duración del crédito UVA</span>
-</div>
-
-<div class="slider-group">
-<label>Años que planeás quedarte <span class="slider-value" id="val-horizonte">15 años</span></label>
-<input type="range" id="sl-horizonte" min="1" max="35" step="1" value="15">
-<span class="hint">El análisis final se muestra en este año — si vendés antes del fin del crédito, los resultados cambian bastante.</span>
-</div>
-
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
-<input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
-<span class="hint">Tasa real anual del crédito &mdash; tu cuota inicial se ajusta por inflación todos los meses: si la inflación anual es 80%, tu cuota sube ~80%.</span>
 </div>
 
 <div class="slider-group">
@@ -859,39 +841,10 @@ message("Motor de simulación cargado")
 <span class="hint">En USD</span>
 </div>
 
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Depósito en garantía <span class="slider-value" id="val-deposito">3</span></label>
-<input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de alquiler que te piden como depósito al firmar</span>
-</div>
-
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Comisión inmobiliaria <span class="slider-value" id="val-comision">1 mes</span></label>
-<input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1">
-<span class="hint">Meses de comisión al alquilar</span>
-</div>
-
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Crecimiento real del salario <span class="slider-value" id="val-crecimiento">8%</span></label>
-<input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8">
-<span class="hint">Por año, por encima de inflación</span>
-</div>
-
 <div class="slider-group">
-<label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
-<div class="preset-btns" id="preset-rendimiento">
-  <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
-  <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
-  <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
-</div>
-<input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
-<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span>
-</div>
-
-<div class="slider-group slider-avanzado" style="display:none">
-<label>Precisión del cálculo <span class="slider-value" id="val-nsim">500</span></label>
-<input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
-<span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span>
+<label>Expensas mensuales <span class="slider-value" id="val-expensas">$200</span></label>
+<input type="range" id="sl-expensas" min="50" max="800" step="25" value="200">
+<span class="hint">En CABA, expensas típicas de un 2-amb oscilan entre $200-$400 USD/mes</span>
 </div>
 
 <div class="slider-group">
@@ -915,18 +868,69 @@ message("Motor de simulación cargado")
 </div>
 
 <div class="slider-group">
-<label>Expensas mensuales <span class="slider-value" id="val-expensas">$200</span></label>
-<input type="range" id="sl-expensas" min="50" max="800" step="25" value="200">
-<span class="hint">En CABA, expensas típicas de un 2-amb oscilan entre $200-$400 USD/mes</span>
+<label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
+<div class="preset-btns" id="preset-rendimiento">
+  <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
+  <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
+  <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
+</div>
+<input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
+<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span>
 </div>
 
-<div class="slider-group slider-avanzado" style="display:none">
+</div>
+
+<button class="avanzado-toggle" id="avanzado-toggle">Configuración avanzada ▼</button>
+
+<div class="slider-grid avanzado-panel" id="avanzado-panel">
+
+<div class="slider-group">
+<label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
+<input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
+<span class="hint">Tasa real anual del crédito — la encontrás en la oferta del banco</span>
+</div>
+
+<div class="slider-group">
+<label>Años que planeás quedarte <span class="slider-value" id="val-horizonte">25 años</span></label>
+<input type="range" id="sl-horizonte" min="1" max="35" step="1" value="25">
+<span class="hint">El análisis se muestra en este año. Por defecto coincide con el plazo del crédito.</span>
+</div>
+
+<div class="slider-group">
+<label>Gastos de escritura <span class="slider-value" id="val-escritura">10%</span></label>
+<input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10">
+<span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span>
+</div>
+
+<div class="slider-group">
+<label>Depósito en garantía <span class="slider-value" id="val-deposito">3</span></label>
+<input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
+<span class="hint">Meses de alquiler que te piden como depósito al firmar</span>
+</div>
+
+<div class="slider-group">
+<label>Comisión inmobiliaria <span class="slider-value" id="val-comision">1 mes</span></label>
+<input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1">
+<span class="hint">Meses de comisión al alquilar</span>
+</div>
+
+<div class="slider-group">
+<label>Crecimiento real del salario <span class="slider-value" id="val-crecimiento">8%</span></label>
+<input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8">
+<span class="hint">Por año, por encima de inflación</span>
+</div>
+
+<div class="slider-group">
 <label>Sueldo declarado (AFIP) <span class="slider-value" id="val-declarado">$2,333</span></label>
 <input type="range" id="sl-declarado" min="500" max="10000" step="100" value="2333">
 <span class="hint">Los bancos calculan la elegibilidad sobre el sueldo en recibo, no el real</span>
 </div>
 
-<button class="avanzado-toggle" id="avanzado-toggle">Configuración avanzada ▼</button>
+<div class="slider-group">
+<label>Precisión del cálculo <span class="slider-value" id="val-nsim">500</span></label>
+<input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
+<span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span>
+</div>
 
 </div>
 
@@ -1208,23 +1212,22 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   // Avanzado toggle
   let avanzadoOpen = false;
   const avanzadoBtn = document.getElementById('avanzado-toggle');
-  if (avanzadoBtn) {
+  const avanzadoPanel = document.getElementById('avanzado-panel');
+  if (avanzadoBtn && avanzadoPanel) {
     avanzadoBtn.addEventListener('click', function () {
       avanzadoOpen = !avanzadoOpen;
-      document.querySelectorAll('.slider-avanzado').forEach(function (el) {
-        el.style.display = avanzadoOpen ? '' : 'none';
-      });
+      avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
       avanzadoBtn.textContent = avanzadoOpen ? 'Configuración avanzada ▲' : 'Configuración avanzada ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
     });
   }
 
-  // Keep horizonte ≤ plazo
+  // When advanced is closed, horizonte tracks plazo automatically
   document.getElementById(sliders.plazo.id).addEventListener('input', function () {
     const plazoEl = document.getElementById(sliders.plazo.id);
     const horizEl = document.getElementById(sliders.horizonte.id);
     horizEl.max = plazoEl.value;
-    if (Number(horizEl.value) > Number(plazoEl.value)) {
+    if (!avanzadoOpen || Number(horizEl.value) > Number(plazoEl.value)) {
       horizEl.value = plazoEl.value;
       refreshLabel('horizonte');
     }
