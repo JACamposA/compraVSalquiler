@@ -563,6 +563,20 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     s_alquiler$media, s_alquiler$q10, s_alquiler$q90, s_alquiler$peor_5pct
   ))
 
+  anos_cp <- c(5, 10, 15)[c(5, 10, 15) < plazo_anos]
+  if (length(anos_cp) > 0) {
+    cp <- resultados %>%
+      mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler")) %>%
+      filter(año %in% anos_cp) %>%
+      group_by(año, tipo_clean) %>%
+      summarise(med = median(patrimonio, na.rm = TRUE), .groups = "drop") %>%
+      pivot_wider(names_from = tipo_clean, values_from = med)
+    cp_pairs <- paste(sapply(seq_len(nrow(cp)), function(i)
+      sprintf("y%d_c=%.0f|y%d_a=%.0f", cp$año[i], cp$Compra[i], cp$año[i], cp$Alquiler[i])
+    ), collapse = "|")
+    cat(sprintf("@@CHECKPOINTS@@%s@@\n", cp_pairs))
+  }
+
   # Prepare data for plots
   patrimonio_por_año <- resultados %>%
     group_by(año, tipo) %>%
@@ -769,6 +783,11 @@ message("Motor de simulación cargado")
 
 <div class="slider-group">
 <label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
+<div class="preset-btns" id="preset-rendimiento">
+  <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
+  <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
+  <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
+</div>
 <input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
 <span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span>
 </div>
@@ -830,7 +849,7 @@ message("Motor de simulación cargado")
 
 </div>
 
-<div class="ahorros-warning" id="ahorros-warning"></div>
+<div class="dia-uno-card" id="dia-uno-card"></div>
 
 <div class="run-bar">
 <button id="btn-calcular">Calcular</button>
@@ -983,34 +1002,65 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   // in construir_params()), since the simulation itself doesn't block that -
   // it just floors the leftover-savings-to-invest at 0. Only applies to the
   // comprar-vs-alquilar mode, which is the only one with a down payment.
-  const ahorrosWarning = document.getElementById("ahorros-warning");
+  const diaUnoCard = document.getElementById("dia-uno-card");
 
-  function checkAhorrosWarning() {
-    if (currentMode !== "comprar") {
-      ahorrosWarning.classList.remove("active");
-      return;
-    }
-    const ahorros = Number(document.getElementById(sliders.ahorros.id).value);
+  function fmt(n) { return "$" + Math.round(n).toLocaleString("en-US") + " USD"; }
+
+  function updateDiaUno() {
+    if (!diaUnoCard) return;
+    if (currentMode !== "comprar") { diaUnoCard.style.display = "none"; return; }
+    diaUnoCard.style.display = "";
+    const ahorros   = Number(document.getElementById(sliders.ahorros.id).value);
     const propiedad = Number(document.getElementById(sliders.propiedad.id).value);
+    const salario   = Number(document.getElementById(sliders.salario.id).value);
     const enganchePct = Number(document.getElementById(sliders.enganche.id).value) / 100;
-    const costoInicial = propiedad * enganchePct + propiedad * 0.10;
-    const faltante = costoInicial - ahorros;
-    if (faltante > 0) {
-      ahorrosWarning.textContent = "Tus ahorros no alcanzan para el anticipo + gastos de escritura: te faltarían $" + Math.round(faltante).toLocaleString("en-US") + " USD.";
-      ahorrosWarning.classList.add("active");
-    } else {
-      ahorrosWarning.classList.remove("active");
+    const anticipo   = propiedad * enganchePct;
+    const escritura  = propiedad * 0.10;
+    const minimo     = anticipo + escritura;
+    const reserva    = salario * 3;
+    const recomendado = minimo + reserva;
+    const alcanzaMin  = ahorros >= minimo;
+    const alcanzaRec  = ahorros >= recomendado;
+
+    function row(label, val, cls) {
+      return '<div class="duno-row' + (cls ? ' ' + cls : '') + '">' +
+        '<span>' + label + '</span><strong>' + fmt(val) + '</strong></div>';
     }
+    diaUnoCard.innerHTML =
+      '<div class="duno-title"><span class="dot"></span> Lo que necesitás el día de la firma</div>' +
+      row('Anticipo (' + Math.round(enganchePct * 100) + '%)', anticipo) +
+      row('Gastos de escritura (10%)', escritura) +
+      row('Total mínimo para firmar', minimo, alcanzaMin ? 'duno-ok' : 'duno-warn') +
+      row('Reserva recomendada (3 meses de salario)', reserva) +
+      row('Total recomendado', recomendado, alcanzaRec ? 'duno-ok' : 'duno-warn') +
+      (!alcanzaMin ? '<div class="duno-alert">⚠ Te faltarían ' + fmt(minimo - ahorros) + ' para poder firmar.</div>' :
+       !alcanzaRec ? '<div class="duno-alert-soft">Alcanzás para firmar, pero quedarías sin reserva de emergencia.</div>' : '');
   }
+
+  // Preset buttons for investment return
+  document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const el = document.getElementById(sliders.rendimiento.id);
+      el.value = btn.dataset.val;
+      document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
+      btn.classList.add('preset-active');
+      refreshLabel('rendimiento');
+      saveInputs();
+      updateDiaUno();
+    });
+  });
+  document.getElementById(sliders.rendimiento.id).addEventListener('input', function () {
+    document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
+  });
 
   Object.keys(sliders).forEach(function (key) {
     const el = document.getElementById(sliders[key].id);
     if (!el) return;
     refreshLabel(key);
-    el.addEventListener("input", function () { refreshLabel(key); saveInputs(); checkAhorrosWarning(); });
+    el.addEventListener("input", function () { refreshLabel(key); saveInputs(); updateDiaUno(); });
   });
 
-  checkAhorrosWarning();
+  updateDiaUno();
 
   const ubicacionSelect = document.getElementById("sl-ubicacion");
   if (ubicacionSelect) ubicacionSelect.addEventListener("change", saveInputs);
@@ -1208,11 +1258,32 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     return '<div class="rs-breakeven-card">A partir del <strong>año ' + escapeHtml(f.ano) + '</strong>, comprar empieza a ganarle a alquilar en la mayoría de los escenarios simulados.</div>';
   }
 
+  function renderCheckpointsCard(f) {
+    const years = [];
+    [5, 10, 15].forEach(function (y) {
+      const c = f['y' + y + '_c'], a = f['y' + y + '_a'];
+      if (c !== undefined && a !== undefined) {
+        const cVal = Number(c), aVal = Number(a);
+        const mejor = cVal > aVal ? 'compra' : 'alquiler';
+        const diff = Math.abs(cVal - aVal);
+        years.push('<div class="rs-cp-row">' +
+          '<span class="rs-cp-year">Año ' + y + '</span>' +
+          '<span class="rs-cp-val">Compra <strong>$' + Math.round(cVal).toLocaleString('en-US') + '</strong></span>' +
+          '<span class="rs-cp-val">Alquiler <strong>$' + Math.round(aVal).toLocaleString('en-US') + '</strong></span>' +
+          '<span class="rs-cp-badge rs-cp-badge-' + mejor + '">+$' + Math.round(diff).toLocaleString('en-US') + ' ' + (mejor === 'compra' ? 'compra' : 'alquiler') + '</span>' +
+          '</div>');
+      }
+    });
+    if (years.length === 0) return '';
+    return '<div class="rs-checkpoints-card"><div class="rs-cp-title">Patrimonio mediano por hito (USD)</div>' + years.join('') + '</div>';
+  }
+
   const CARD_RENDERERS = {
     RESUMEN: renderResumenCard,
     RECOMENDACION: renderRecomendacionCard,
     BREAKEVEN: renderBreakevenCard,
     INDICADORES: renderIndicadoresCard,
+    CHECKPOINTS: renderCheckpointsCard,
     CONFIGURACION: renderConfiguracionCard,
     PATRIMONIO: renderPatrimonioCard,
     GRAFICOBLURB: renderGraficoBlurbCard,

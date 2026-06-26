@@ -261,20 +261,90 @@ select.app-select {
   color: #e8edf5;
 }
 
-.ahorros-warning {
-  display: none;
-  margin-top: 1.4rem;
-  padding: 0.8rem 1rem;
-  border-radius: 12px;
-  background: rgba(255, 193, 7, 0.12);
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  color: #ffd966;
+/* ---------------- Dia-uno card (always-visible pre-run summary) ---------------- */
+.dia-uno-card {
+  margin: 1.2rem 0 0.4rem;
+  padding: 1rem 1.1rem 0.7rem;
+  background: rgba(46, 134, 193, 0.07);
+  border: 1px solid rgba(46, 134, 193, 0.2);
+  border-radius: 14px;
   font-size: 0.88rem;
-  line-height: 1.4;
+}
+.duno-title {
+  font-weight: 600;
+  color: #2e86c1;
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.duno-title .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2e86c1;
+  display: inline-block;
+}
+.duno-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.22rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #c9d1e0;
+  gap: 0.5rem;
+}
+.duno-row strong {
+  color: #e8edf5;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.duno-ok strong { color: #4ade80; }
+.duno-warn strong { color: #fbbf24; }
+.duno-alert {
+  margin-top: 0.55rem;
+  color: #fbbf24;
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+.duno-alert-soft {
+  margin-top: 0.55rem;
+  color: #94a3b8;
+  font-size: 0.82rem;
 }
 
-.ahorros-warning.active {
-  display: block;
+/* ---------------- Preset buttons (return presets) ---------------- */
+.preset-btns {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0.5rem;
+  flex-wrap: wrap;
+}
+.preset-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  border: 1px solid rgba(108, 92, 231, 0.35);
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.preset-btn:hover {
+  background: rgba(108, 92, 231, 0.12);
+  color: #c9d1e0;
+  border-color: rgba(108, 92, 231, 0.55);
+}
+.preset-btn.preset-active {
+  background: rgba(108, 92, 231, 0.22);
+  color: #a78bfa;
+  border-color: #6c5ce7;
 }
 
 /* ---------------- Run button ---------------- */
@@ -634,6 +704,62 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
 
 #sim-app .qwebr-output-code-area .rs-breakeven-card strong {
   color: #ffd43b;
+}
+
+/* ---------------- Checkpoints card ---------------- */
+#sim-app .qwebr-output-code-area .rs-checkpoints-card {
+  font-family: 'Inter', sans-serif;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 0.85rem 1.1rem;
+  margin: 0.4rem 0 1rem;
+}
+#sim-app .qwebr-output-code-area .rs-cp-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+#sim-app .qwebr-output-code-area .rs-cp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.86rem;
+  flex-wrap: wrap;
+}
+#sim-app .qwebr-output-code-area .rs-cp-year {
+  font-weight: 600;
+  color: #e8edf5;
+  min-width: 45px;
+}
+#sim-app .qwebr-output-code-area .rs-cp-val {
+  color: #94a3b8;
+  flex: 1;
+  min-width: 120px;
+}
+#sim-app .qwebr-output-code-area .rs-cp-val strong {
+  color: #e8edf5;
+  font-variant-numeric: tabular-nums;
+}
+#sim-app .qwebr-output-code-area .rs-cp-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+#sim-app .qwebr-output-code-area .rs-cp-badge-compra {
+  background: rgba(46, 134, 193, 0.18);
+  color: #60a5fa;
+}
+#sim-app .qwebr-output-code-area .rs-cp-badge-alquiler {
+  background: rgba(39, 174, 96, 0.18);
+  color: #4ade80;
 }
 
 /* ---------------- Callouts (expandable details / disclaimer) ---------------- */
