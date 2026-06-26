@@ -856,28 +856,6 @@ message("Motor de simulación cargado")
 <span class="hint">CABA: ~3% apreciación anual | GBA: ~0.5%</span>
 </div>
 
-<div class="slider-group">
-<label>Escenario macroeconómico</label>
-<div class="preset-btns" id="preset-escenario">
-  <button class="preset-btn preset-active" data-val="base">Continuidad</button>
-  <button class="preset-btn" data-val="estabilizacion">Estabilización</button>
-  <button class="preset-btn" data-val="hiperinflacion">Hiperinflación</button>
-</div>
-<input type="hidden" id="sl-escenario" value="base">
-<span class="hint">Continuidad: inflación ~4% mensual | Estabilización: ~2% | Hiperinflación: ~10%</span>
-</div>
-
-<div class="slider-group">
-<label>Rendimiento de inversiones <span class="slider-value" id="val-rendimiento">7%</span></label>
-<div class="preset-btns" id="preset-rendimiento">
-  <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
-  <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
-  <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
-</div>
-<input type="range" id="sl-rendimiento" min="0" max="15" step="0.5" value="7">
-<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos</span>
-</div>
-
 </div>
 
 <button class="avanzado-toggle" id="avanzado-toggle">Configuración avanzada ▼</button>
@@ -930,6 +908,28 @@ message("Motor de simulación cargado")
 <label>Precisión del cálculo <span class="slider-value" id="val-nsim">500</span></label>
 <input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
 <span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span>
+</div>
+
+<div class="slider-group">
+<label>Escenario macroeconómico</label>
+<div class="preset-btns" id="preset-escenario">
+  <button class="preset-btn preset-active" data-val="base">Continuidad</button>
+  <button class="preset-btn" data-val="estabilizacion">Estabilización</button>
+  <button class="preset-btn" data-val="hiperinflacion">Hiperinflación</button>
+</div>
+<input type="hidden" id="sl-escenario" value="base">
+<span class="hint">Continuidad: inflación ~4% mensual | Estabilización: ~2% | Hiperinflación: ~10%</span>
+</div>
+
+<div class="slider-group">
+<label>Rendimiento de inversiones</label>
+<div class="preset-btns" id="preset-rendimiento">
+  <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
+  <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
+  <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
+</div>
+<input type="hidden" id="sl-rendimiento" value="7">
+<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos en el caso de alquilar</span>
 </div>
 
 </div>
@@ -1108,6 +1108,13 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
         b.classList.toggle("preset-active", b.dataset.val === savedInputs.escenario);
       });
     }
+    const rendimientoEl = document.getElementById("sl-rendimiento");
+    if (rendimientoEl && savedInputs.rendimiento !== undefined) {
+      rendimientoEl.value = savedInputs.rendimiento;
+      document.querySelectorAll("#preset-rendimiento .preset-btn").forEach(function (b) {
+        b.classList.toggle("preset-active", b.dataset.val === savedInputs.rendimiento);
+      });
+    }
   }
 
   // Toggles between the buy-vs-rent comparison and the standalone investment
@@ -1186,17 +1193,11 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   // Preset buttons for investment return
   document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const el = document.getElementById(sliders.rendimiento.id);
-      el.value = btn.dataset.val;
+      document.getElementById(sliders.rendimiento.id).value = btn.dataset.val;
       document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
       btn.classList.add('preset-active');
-      refreshLabel('rendimiento');
       saveInputs();
-      updateDiaUno();
     });
-  });
-  document.getElementById(sliders.rendimiento.id).addEventListener('input', function () {
-    document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
   });
 
   // Preset buttons for macroeconomic scenario
