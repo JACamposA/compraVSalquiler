@@ -533,8 +533,9 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   total_pagado_credito <- costo_mensual_compra * n_pagos
   costo_inicial_compra <- params$costo_total_compra
 
+  salario_declarado_usd  <- salario_mensual_usd
   total_pagado_alquiler <- alquiler_mensual_usd * 12 * plazo_anos
-  costo_inicial_alquiler <- alquiler_mensual_usd * (deposito_meses + comision_meses)
+  costo_inicial_alquiler <- alquiler_mensual_usd * (3L + 1L)
 
   ratio_precio_alquiler  <- round(valor_propiedad_usd / alquiler_mensual_usd)
   ratio_cuota_ingreso    <- costo_mensual_compra / salario_mensual_usd * 100
@@ -742,19 +743,22 @@ simular_inversion_completa <- function(sim_id, capital_inicial, aporte_mensual_i
 }
 
 ejecutar_simulacion_inversion <- function(capital_inicial, aporte_mensual, anos, rendimiento_anual,
-                                           crecimiento_aporte_anual, n_simulaciones) {
+                                           crecimiento_aporte_anual, n_simulaciones,
+                                           prob_crisis_anual = 0.08) {
   set.seed(42)
   do.call(rbind, lapply(1:n_simulaciones, function(sim) {
-    crisis_vector <- simular_regimen_crisis(anos * 12, 0.08, 18, 6)
+    crisis_vector <- simular_regimen_crisis(anos * 12, prob_crisis_anual, 18, 6)
     simular_inversion_completa(sim, capital_inicial, aporte_mensual, anos, rendimiento_anual,
                                 crecimiento_aporte_anual, crisis_vector)
   }))
 }
 
 ejecutar_inversion_y_mostrar <- function(capital_inicial, aporte_mensual, anos, rendimiento_anual,
-                                          crecimiento_aporte_anual, n_simulaciones) {
-  resultados <- ejecutar_simulacion_inversion(capital_inicial, aporte_mensual, anos, rendimiento_anual,
-                                               crecimiento_aporte_anual, n_simulaciones)
+                                          crecimiento_aporte_anual, n_simulaciones,
+                                          inflacion_dolar_anual = 0.03, prob_crisis_anual = 0.08) {
+  rendimiento_real <- max(0, rendimiento_anual - inflacion_dolar_anual)
+  resultados <- ejecutar_simulacion_inversion(capital_inicial, aporte_mensual, anos, rendimiento_real,
+                                               crecimiento_aporte_anual, n_simulaciones, prob_crisis_anual)
 
   total_aportado <- capital_inicial + sum(sapply(0:(anos * 12 - 1), function(m) {
     aporte_mensual * (1 + crecimiento_aporte_anual)^floor(m / 12)
@@ -958,6 +962,26 @@ message("Motor de simulación cargado")
 
 </div>
 
+<div id="invertir-extras" style="display:none">
+<button class="avanzado-toggle" id="avanzado-toggle-inv">Avanzado ▼</button>
+
+<div class="slider-grid avanzado-panel" id="avanzado-panel-inv">
+
+<div class="slider-group">
+<label>Inflación anual del dólar <span class="slider-value" id="val-inv_inflacion_dolar">3%</span></label>
+<input type="range" id="sl-inv_inflacion_dolar" min="0" max="10" step="0.5" value="3">
+<span class="hint">Reduce el retorno real. Retorno real = retorno nominal − inflación del dólar.</span>
+</div>
+
+<div class="slider-group">
+<label>Probabilidad de crisis anual <span class="slider-value" id="val-inv_prob_crisis">8%</span></label>
+<input type="range" id="sl-inv_prob_crisis" min="2" max="30" step="1" value="8">
+<span class="hint">Chance de un episodio que golpee la bolsa (~35% de caída en 18 meses) en un año dado.</span>
+</div>
+
+</div>
+</div>
+
 <div class="dia-uno-card" id="dia-uno-card"></div>
 
 <div class="run-bar">
@@ -1016,12 +1040,14 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     inflacion_pesos: { id: "sl-inflacion_pesos", fmt: v => v + "%" },
     inflacion_dolar: { id: "sl-inflacion_dolar", fmt: v => v + "%" },
     prob_crisis:     { id: "sl-prob_crisis",     fmt: v => v + "%" },
-    inv_capital:      { id: "sl-inv_capital",      fmt: v => "$" + Number(v).toLocaleString("en-US") },
-    inv_aporte:       { id: "sl-inv_aporte",       fmt: v => "$" + Number(v).toLocaleString("en-US") },
-    inv_anos:         { id: "sl-inv_anos",         fmt: v => v + " años" },
-    inv_crecaporte:   { id: "sl-inv_crecaporte",   fmt: v => v + "%" },
-    inv_rendimiento:  { id: "sl-inv_rendimiento",  fmt: v => v + "%" },
-    inv_nsim:         { id: "sl-inv_nsim",         fmt: v => v }
+    inv_capital:          { id: "sl-inv_capital",          fmt: v => "$" + Number(v).toLocaleString("en-US") },
+    inv_aporte:           { id: "sl-inv_aporte",           fmt: v => "$" + Number(v).toLocaleString("en-US") },
+    inv_anos:             { id: "sl-inv_anos",             fmt: v => v + " años" },
+    inv_crecaporte:       { id: "sl-inv_crecaporte",       fmt: v => v + "%" },
+    inv_rendimiento:      { id: "sl-inv_rendimiento",      fmt: v => v + "%" },
+    inv_nsim:             { id: "sl-inv_nsim",             fmt: v => v },
+    inv_inflacion_dolar:  { id: "sl-inv_inflacion_dolar",  fmt: v => v + "%" },
+    inv_prob_crisis:      { id: "sl-inv_prob_crisis",      fmt: v => v + "%" }
   };
 
   function updateFill(el) {
@@ -1095,16 +1121,18 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   const modeToggleBtns = document.querySelectorAll(".mode-toggle-btn");
   const slidersComprar = document.getElementById("sliders-comprar");
   const slidersInvertir = document.getElementById("sliders-invertir");
-  const comprarExtras = document.getElementById("comprar-extras");
+  const comprarExtras  = document.getElementById("comprar-extras");
+  const invertirExtras = document.getElementById("invertir-extras");
 
   function setMode(mode) {
     currentMode = mode;
     modeToggleBtns.forEach(function (btn) {
       btn.classList.toggle("active", btn.dataset.mode === mode);
     });
-    slidersComprar.style.display = mode === "comprar" ? "" : "none";
-    if (comprarExtras) comprarExtras.style.display = mode === "comprar" ? "" : "none";
+    slidersComprar.style.display  = mode === "comprar"  ? "" : "none";
     slidersInvertir.style.display = mode === "invertir" ? "" : "none";
+    if (comprarExtras)  comprarExtras.style.display  = mode === "comprar"  ? "" : "none";
+    if (invertirExtras) invertirExtras.style.display = mode === "invertir" ? "" : "none";
     status.textContent = "Listo para calcular";
     updateDiaUno();
     // Results from the other mode don't apply here - clear them rather than
@@ -1195,7 +1223,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     });
   });
 
-  // Avanzado toggle
+  // Avanzado toggle — compra vs alquiler
   let avanzadoOpen = false;
   const avanzadoBtn = document.getElementById('avanzado-toggle');
   const avanzadoPanel = document.getElementById('avanzado-panel');
@@ -1205,6 +1233,19 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
       avanzadoBtn.textContent = avanzadoOpen ? 'Avanzado ▲' : 'Avanzado ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
+    });
+  }
+
+  // Avanzado toggle — simulador de inversión
+  let avanzadoInvOpen = false;
+  const avanzadoBtnInv = document.getElementById('avanzado-toggle-inv');
+  const avanzadoPanelInv = document.getElementById('avanzado-panel-inv');
+  if (avanzadoBtnInv && avanzadoPanelInv) {
+    avanzadoBtnInv.addEventListener('click', function () {
+      avanzadoInvOpen = !avanzadoInvOpen;
+      avanzadoPanelInv.classList.toggle('avanzado-panel--open', avanzadoInvOpen);
+      avanzadoBtnInv.textContent = avanzadoInvOpen ? 'Avanzado ▲' : 'Avanzado ▼';
+      avanzadoBtnInv.classList.toggle('avanzado-open', avanzadoInvOpen);
     });
   }
 
@@ -1234,8 +1275,11 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
         'crecimiento_aporte_inv    <- ' + (Number(val("inv_crecaporte")) / 100),
         'rendimiento_inv           <- ' + (Number(val("inv_rendimiento")) / 100),
         'n_simulaciones_inv        <- ' + val("inv_nsim"),
+        'inflacion_dolar_inv       <- ' + (Number(val("inv_inflacion_dolar")) / 100),
+        'prob_crisis_inv           <- ' + (Number(val("inv_prob_crisis")) / 100),
         'ejecutar_inversion_y_mostrar(capital_inicial_inv, aporte_mensual_inv, anos_inv,',
-        '                              rendimiento_inv, crecimiento_aporte_inv, n_simulaciones_inv)'
+        '                              rendimiento_inv, crecimiento_aporte_inv, n_simulaciones_inv,',
+        '                              inflacion_dolar_inv, prob_crisis_inv)'
       ].join("\n");
     }
     const ubicacion = document.getElementById("sl-ubicacion").value;
