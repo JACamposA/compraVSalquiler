@@ -401,20 +401,27 @@ construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_aho
                               ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
                               n_simulaciones, escritura_pct = 0.10,
                               escenario = "base", expensas_mensual_usd = 200,
-                              salario_declarado_usd = NULL) {
+                              salario_declarado_usd = NULL,
+                              inflacion_pesos_mensual = 0.04, inflacion_dolar_anual = 0.03,
+                              prob_crisis_ui = 0.12) {
 
   if (is.null(salario_declarado_usd) || salario_declarado_usd <= 0)
     salario_declarado_usd <- salario_mensual_usd
 
-  inflacion_base      <- switch(escenario, estabilizacion = 0.02, hiperinflacion = 0.10, 0.04)
-  prob_crisis         <- switch(escenario, estabilizacion = 0.06, hiperinflacion = 0.20, 0.12)
-  alquiler_crec       <- switch(escenario, estabilizacion = 0.01, hiperinflacion = 0.06, 0.025)
-  ppp_desv            <- switch(escenario, estabilizacion = 0.005, hiperinflacion = 0.04, 0.02)
-  inflacion_crisis_m  <- switch(escenario, estabilizacion = 0.06, hiperinflacion = 0.18, 0.12)
-  apreciacion_prop    <- switch(escenario,
+  # Scenario drives non-exposed structural params; exposed sliders override inflation + crisis
+  alquiler_crec      <- switch(escenario, estabilizacion = 0.01, hiperinflacion = 0.06, 0.025)
+  ppp_desv           <- switch(escenario, estabilizacion = 0.005, hiperinflacion = 0.04, 0.02)
+  inflacion_crisis_m <- switch(escenario, estabilizacion = 0.06, hiperinflacion = 0.18, 0.12)
+  apreciacion_prop   <- switch(escenario,
     estabilizacion = if (ubicacion == "GBA") 0.02 else 0.04,
     hiperinflacion = if (ubicacion == "GBA") -0.01 else 0.01,
     if (ubicacion == "GBA") 0.005 else 0.025)
+
+  # Exposed sliders take priority
+  inflacion_base <- inflacion_pesos_mensual
+  prob_crisis    <- prob_crisis_ui
+  # Real investment return = nominal USD return minus dollar inflation
+  rendimiento_real_usd <- max(0, rendimiento_inversiones - inflacion_dolar_anual)
 
   meses_totales <- plazo_anos * 12
   monto_credito <- valor_propiedad_usd * (1 - enganche_pct)
@@ -440,7 +447,7 @@ construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_aho
     crecimiento_salario_anual_usd = crecimiento_salario_anual, salario_volatilidad_anual = 0.03,
     apreciacion_propiedad_anual_usd = apreciacion_prop, apreciacion_volatilidad_anual = 0.08,
     alquiler_crecimiento_real_anual = alquiler_crec, alquiler_volatilidad_anual = 0.06,
-    rendimiento_bolsa_base = rendimiento_inversiones, volatilidad_bolsa = 0.15, tasa_libre_riesgo_anual = 0.02,
+    rendimiento_bolsa_base = rendimiento_real_usd, volatilidad_bolsa = 0.15, tasa_libre_riesgo_anual = 0.02,
     cor_inflacion_tc = 0.80, cor_salario_inflacion = 0.30, cor_inmobiliario_bolsa = 0.40,
     cor_alquiler_inflacion = 0.60, cor_inmobiliario_inflacion = 0.50,
     modelar_crisis = TRUE, prob_crisis_anual = prob_crisis,
@@ -492,22 +499,21 @@ tema_oscuro <- function(base_size = 12) {
 # ============================================================
 ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                                 valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
-                                alquiler_mensual_usd, deposito_meses, comision_meses,
-                                ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                                n_simulaciones, escritura_pct = 0.10, horizonte_anos = NULL,
-                                escenario = "base", expensas_mensual_usd = 200,
-                                salario_declarado_usd = NULL) {
+                                alquiler_mensual_usd, ubicacion, rendimiento_inversiones,
+                                expensas_mensual_usd = 200, escenario = "base",
+                                inflacion_pesos_mensual = 0.04, inflacion_dolar_anual = 0.03,
+                                prob_crisis_ui = 0.12) {
 
-  horizonte_efectivo <- if (is.null(horizonte_anos) || horizonte_anos >= plazo_anos) plazo_anos else as.integer(horizonte_anos)
-  if (is.null(salario_declarado_usd) || salario_declarado_usd <= 0) salario_declarado_usd <- salario_mensual_usd
+  horizonte_efectivo <- plazo_anos
 
   # Build params
   params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                               valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
-                              alquiler_mensual_usd, deposito_meses, comision_meses,
-                              ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                              n_simulaciones, escritura_pct, escenario, expensas_mensual_usd,
-                              salario_declarado_usd)
+                              alquiler_mensual_usd, deposito_meses = 3L, comision_meses = 1L,
+                              ubicacion, crecimiento_salario_anual = 0.08, rendimiento_inversiones,
+                              n_simulaciones = 500L, escritura_pct = 0.10, escenario,
+                              expensas_mensual_usd, salario_declarado_usd = salario_mensual_usd,
+                              inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui)
   
   # --- Resumen simple: matematica directa, sin Monte Carlo, en USD de hoy ---
   # Usa la misma tasa mensual que el motor de simulacion (division simple,
@@ -830,6 +836,12 @@ message("Motor de simulación cargado")
 </div>
 
 <div class="slider-group">
+<label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
+<input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
+<span class="hint">Tasa real anual del crédito — la encontrás en la oferta del banco</span>
+</div>
+
+<div class="slider-group">
 <label>Plazo del crédito <span class="slider-value" id="val-plazo">25 años</span></label>
 <input type="range" id="sl-plazo" min="5" max="35" step="1" value="25">
 <span class="hint">Duración del crédito UVA</span>
@@ -858,57 +870,9 @@ message("Motor de simulación cargado")
 
 </div>
 
-<button class="avanzado-toggle" id="avanzado-toggle">Configuración avanzada ▼</button>
+<button class="avanzado-toggle" id="avanzado-toggle">Parámetros de inversión ▼</button>
 
 <div class="slider-grid avanzado-panel" id="avanzado-panel">
-
-<div class="slider-group">
-<label>Tasa real UVA <span class="slider-value" id="val-tasa_uva">6%</span></label>
-<input type="range" id="sl-tasa_uva" min="0" max="15" step="0.5" value="6">
-<span class="hint">Tasa real anual del crédito — la encontrás en la oferta del banco</span>
-</div>
-
-<div class="slider-group">
-<label>Años que planeás quedarte <span class="slider-value" id="val-horizonte">25 años</span></label>
-<input type="range" id="sl-horizonte" min="1" max="35" step="1" value="25">
-<span class="hint">El análisis se muestra en este año. Por defecto coincide con el plazo del crédito.</span>
-</div>
-
-<div class="slider-group">
-<label>Gastos de escritura <span class="slider-value" id="val-escritura">10%</span></label>
-<input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10">
-<span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span>
-</div>
-
-<div class="slider-group">
-<label>Depósito en garantía <span class="slider-value" id="val-deposito">3</span></label>
-<input type="range" id="sl-deposito" min="0" max="6" step="1" value="3">
-<span class="hint">Meses de alquiler que te piden como depósito al firmar</span>
-</div>
-
-<div class="slider-group">
-<label>Comisión inmobiliaria <span class="slider-value" id="val-comision">1 mes</span></label>
-<input type="range" id="sl-comision" min="0" max="3" step="0.5" value="1">
-<span class="hint">Meses de comisión al alquilar</span>
-</div>
-
-<div class="slider-group">
-<label>Crecimiento real del salario <span class="slider-value" id="val-crecimiento">8%</span></label>
-<input type="range" id="sl-crecimiento" min="0" max="20" step="0.5" value="8">
-<span class="hint">Por año, por encima de inflación</span>
-</div>
-
-<div class="slider-group">
-<label>Sueldo declarado (AFIP) <span class="slider-value" id="val-declarado">$2,333</span></label>
-<input type="range" id="sl-declarado" min="500" max="10000" step="100" value="2333">
-<span class="hint">Los bancos calculan la elegibilidad sobre el sueldo en recibo, no el real</span>
-</div>
-
-<div class="slider-group">
-<label>Precisión del cálculo <span class="slider-value" id="val-nsim">500</span></label>
-<input type="range" id="sl-nsim" min="50" max="1000" step="50" value="500">
-<span class="hint">Más alto = resultado más confiable, pero tarda un poco más</span>
-</div>
 
 <div class="slider-group">
 <label>Escenario macroeconómico</label>
@@ -918,18 +882,36 @@ message("Motor de simulación cargado")
   <button class="preset-btn" data-val="hiperinflacion">Hiperinflación</button>
 </div>
 <input type="hidden" id="sl-escenario" value="base">
-<span class="hint">Continuidad: inflación ~4% mensual | Estabilización: ~2% | Hiperinflación: ~10%</span>
+<span class="hint">Elige un perfil macro — ajusta los valores de abajo automáticamente</span>
 </div>
 
 <div class="slider-group">
-<label>Rendimiento de inversiones</label>
+<label>Inflación mensual del peso <span class="slider-value" id="val-inflacion_pesos">4%</span></label>
+<input type="range" id="sl-inflacion_pesos" min="1" max="15" step="0.5" value="4">
+<span class="hint">Tasa mensual promedio del IPC. Continuidad ~4% | Estabilización ~2% | Hiperinflación ~10%</span>
+</div>
+
+<div class="slider-group">
+<label>Inflación anual del dólar <span class="slider-value" id="val-inflacion_dolar">3%</span></label>
+<input type="range" id="sl-inflacion_dolar" min="0" max="10" step="0.5" value="3">
+<span class="hint">Cuánto pierde poder de compra el dólar por año (inflación en EE.UU.). Reduce el retorno real de tus inversiones en USD.</span>
+</div>
+
+<div class="slider-group">
+<label>Retorno nominal de la bolsa</label>
 <div class="preset-btns" id="preset-rendimiento">
   <button type="button" class="preset-btn" data-val="3">Conservador 3%</button>
   <button type="button" class="preset-btn preset-active" data-val="7">Moderado 7%</button>
   <button type="button" class="preset-btn" data-val="10">Agresivo 10%</button>
 </div>
 <input type="hidden" id="sl-rendimiento" value="7">
-<span class="hint">Ganancia anual esperada sobre tus ahorros invertidos en el caso de alquilar</span>
+<span class="hint">Retorno nominal anual en USD. El retorno real = este valor menos la inflación del dólar.</span>
+</div>
+
+<div class="slider-group">
+<label>Probabilidad de crisis anual <span class="slider-value" id="val-prob_crisis">12%</span></label>
+<input type="range" id="sl-prob_crisis" min="2" max="30" step="1" value="12">
+<span class="hint">Chance de que ocurra un episodio de crisis (devaluación brusca, caída de salario real) en un año. Argentina históricamente ~10-15%.</span>
 </div>
 
 </div>
@@ -996,26 +978,20 @@ plazo_anos                 <- 25
 tasa_real_uva_anual        <- 0.06
 
 alquiler_mensual_usd       <- 437
-deposito_meses             <- 3
-comision_meses             <- 1
+expensas_mensual_usd       <- 200
 
 ubicacion                  <- "GBA"
-crecimiento_salario_anual  <- 0.08
 rendimiento_inversiones    <- 0.07
-escritura_pct              <- 0.10
-horizonte_anos             <- 15
 escenario                  <- "base"
-expensas_mensual_usd       <- 200
-salario_declarado_usd      <- 2333
-
-n_simulaciones             <- 500
+inflacion_pesos_mensual    <- 0.04
+inflacion_dolar_anual      <- 0.03
+prob_crisis_ui             <- 0.12
 
 ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                    valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
-                   alquiler_mensual_usd, deposito_meses, comision_meses,
-                   ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                   n_simulaciones, escritura_pct, horizonte_anos,
-                   escenario, expensas_mensual_usd, salario_declarado_usd)
+                   alquiler_mensual_usd, ubicacion, rendimiento_inversiones,
+                   expensas_mensual_usd, escenario,
+                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui)
 ```
 
 </div>
@@ -1029,19 +1005,15 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     tasa_ahorro:  { id: "sl-tasa_ahorro",  fmt: v => v + "%" },
     propiedad:    { id: "sl-propiedad",    fmt: v => "$" + Number(v).toLocaleString("en-US") },
     enganche:     { id: "sl-enganche",     fmt: v => v + "%" },
-    escritura:    { id: "sl-escritura",    fmt: v => v + "%" },
-    plazo:        { id: "sl-plazo",        fmt: v => v + " años" },
-    horizonte:    { id: "sl-horizonte",    fmt: v => v + " años" },
-    tasa_uva:     { id: "sl-tasa_uva",     fmt: v => v + "%" },
-    alquiler:     { id: "sl-alquiler",     fmt: v => "$" + Number(v).toLocaleString("en-US") },
-    deposito:     { id: "sl-deposito",     fmt: v => v },
-    comision:     { id: "sl-comision",     fmt: v => v + " mes" },
-    crecimiento:  { id: "sl-crecimiento",  fmt: v => v + "%" },
-    rendimiento:  { id: "sl-rendimiento",  fmt: v => v + "%" },
-    nsim:         { id: "sl-nsim",         fmt: v => v },
-    expensas:     { id: "sl-expensas",     fmt: v => "$" + Number(v).toLocaleString("en-US") },
-    declarado:    { id: "sl-declarado",    fmt: v => "$" + Number(v).toLocaleString("en-US") },
-    escenario:    { id: "sl-escenario",    fmt: v => v },
+    tasa_uva:        { id: "sl-tasa_uva",        fmt: v => v + "%" },
+    plazo:           { id: "sl-plazo",           fmt: v => v + " años" },
+    alquiler:        { id: "sl-alquiler",        fmt: v => "$" + Number(v).toLocaleString("en-US") },
+    expensas:        { id: "sl-expensas",        fmt: v => "$" + Number(v).toLocaleString("en-US") },
+    escenario:       { id: "sl-escenario",       fmt: v => v },
+    rendimiento:     { id: "sl-rendimiento",     fmt: v => v + "%" },
+    inflacion_pesos: { id: "sl-inflacion_pesos", fmt: v => v + "%" },
+    inflacion_dolar: { id: "sl-inflacion_dolar", fmt: v => v + "%" },
+    prob_crisis:     { id: "sl-prob_crisis",     fmt: v => v + "%" },
     inv_capital:      { id: "sl-inv_capital",      fmt: v => "$" + Number(v).toLocaleString("en-US") },
     inv_aporte:       { id: "sl-inv_aporte",       fmt: v => "$" + Number(v).toLocaleString("en-US") },
     inv_anos:         { id: "sl-inv_anos",         fmt: v => v + " años" },
@@ -1101,20 +1073,17 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     });
     const ubicacionEl = document.getElementById("sl-ubicacion");
     if (ubicacionEl && savedInputs.ubicacion !== undefined) ubicacionEl.value = savedInputs.ubicacion;
-    const escenarioEl2 = document.getElementById("sl-escenario");
-    if (escenarioEl2 && savedInputs.escenario !== undefined) {
-      escenarioEl2.value = savedInputs.escenario;
-      document.querySelectorAll("#preset-escenario .preset-btn").forEach(function (b) {
-        b.classList.toggle("preset-active", b.dataset.val === savedInputs.escenario);
-      });
-    }
-    const rendimientoEl = document.getElementById("sl-rendimiento");
-    if (rendimientoEl && savedInputs.rendimiento !== undefined) {
-      rendimientoEl.value = savedInputs.rendimiento;
-      document.querySelectorAll("#preset-rendimiento .preset-btn").forEach(function (b) {
-        b.classList.toggle("preset-active", b.dataset.val === savedInputs.rendimiento);
-      });
-    }
+    ["escenario", "preset-escenario", "rendimiento", "preset-rendimiento"].forEach(function(_, i, a) {
+      if (i % 2 !== 0) return;
+      const key = a[i], groupId = a[i + 1];
+      const el = document.getElementById("sl-" + key);
+      if (el && savedInputs[key] !== undefined) {
+        el.value = savedInputs[key];
+        document.querySelectorAll("#" + groupId + " .preset-btn").forEach(function (b) {
+          b.classList.toggle("preset-active", b.dataset.val === savedInputs[key]);
+        });
+      }
+    });
   }
 
   // Toggles between the buy-vs-rent comparison and the standalone investment
@@ -1166,7 +1135,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const propiedad    = Number(document.getElementById(sliders.propiedad.id).value);
     const salario      = Number(document.getElementById(sliders.salario.id).value);
     const enganchePct  = Number(document.getElementById(sliders.enganche.id).value) / 100;
-    const escrituraPct = Number(document.getElementById(sliders.escritura.id).value) / 100;
+    const escrituraPct = 0.10;
     const anticipo   = propiedad * enganchePct;
     const escritura  = propiedad * escrituraPct;
     const minimo     = anticipo + escritura;
@@ -1182,7 +1151,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     diaUnoCard.innerHTML =
       '<div class="duno-title"><span class="dot"></span> Lo que necesitás el día de la firma</div>' +
       row('Anticipo (' + Math.round(enganchePct * 100) + '%)', anticipo) +
-      row('Gastos de escritura (' + Math.round(escrituraPct * 100) + '%)', escritura) +
+      row('Gastos de escritura (10%)', escritura) +
       row('Total mínimo para firmar', minimo, alcanzaMin ? 'duno-ok' : 'duno-warn') +
       row('Reserva recomendada (3 meses de salario)', reserva) +
       row('Total recomendado', recomendado, alcanzaRec ? 'duno-ok' : 'duno-warn') +
@@ -1200,12 +1169,24 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     });
   });
 
-  // Preset buttons for macroeconomic scenario
+  // Preset buttons for macroeconomic scenario — also set inflation and crisis sliders
+  const scenarioPresets = {
+    base:           { inflacion_pesos: 4,  prob_crisis: 12 },
+    estabilizacion: { inflacion_pesos: 2,  prob_crisis: 6  },
+    hiperinflacion: { inflacion_pesos: 10, prob_crisis: 20 }
+  };
   document.querySelectorAll('#preset-escenario .preset-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.getElementById('sl-escenario').value = btn.dataset.val;
       document.querySelectorAll('#preset-escenario .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
       btn.classList.add('preset-active');
+      const p = scenarioPresets[btn.dataset.val];
+      if (p) {
+        const ipEl = document.getElementById(sliders.inflacion_pesos.id);
+        const pcEl = document.getElementById(sliders.prob_crisis.id);
+        if (ipEl) { ipEl.value = p.inflacion_pesos; refreshLabel('inflacion_pesos'); }
+        if (pcEl) { pcEl.value = p.prob_crisis;     refreshLabel('prob_crisis');     }
+      }
       saveInputs();
     });
   });
@@ -1218,21 +1199,11 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     avanzadoBtn.addEventListener('click', function () {
       avanzadoOpen = !avanzadoOpen;
       avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
-      avanzadoBtn.textContent = avanzadoOpen ? 'Configuración avanzada ▲' : 'Configuración avanzada ▼';
+      avanzadoBtn.textContent = avanzadoOpen ? 'Parámetros de inversión ▲' : 'Parámetros de inversión ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
     });
   }
 
-  // When advanced is closed, horizonte tracks plazo automatically
-  document.getElementById(sliders.plazo.id).addEventListener('input', function () {
-    const plazoEl = document.getElementById(sliders.plazo.id);
-    const horizEl = document.getElementById(sliders.horizonte.id);
-    horizEl.max = plazoEl.value;
-    if (!avanzadoOpen || Number(horizEl.value) > Number(plazoEl.value)) {
-      horizEl.value = plazoEl.value;
-      refreshLabel('horizonte');
-    }
-  });
 
   Object.keys(sliders).forEach(function (key) {
     const el = document.getElementById(sliders[key].id);
@@ -1273,23 +1244,18 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       'plazo_anos                 <- ' + val("plazo"),
       'tasa_real_uva_anual        <- ' + (Number(val("tasa_uva")) / 100),
       'alquiler_mensual_usd       <- ' + val("alquiler"),
-      'deposito_meses             <- ' + val("deposito"),
-      'comision_meses             <- ' + val("comision"),
-      'ubicacion                  <- "' + ubicacion + '"',
-      'crecimiento_salario_anual  <- ' + (Number(val("crecimiento")) / 100),
-      'rendimiento_inversiones    <- ' + (Number(val("rendimiento")) / 100),
-      'escritura_pct              <- ' + (Number(val("escritura")) / 100),
-      'horizonte_anos             <- ' + val("horizonte"),
-      'escenario                  <- "' + (val("escenario") || "base") + '"',
       'expensas_mensual_usd       <- ' + val("expensas"),
-      'salario_declarado_usd      <- ' + val("declarado"),
-      'n_simulaciones             <- ' + val("nsim"),
+      'ubicacion                  <- "' + ubicacion + '"',
+      'rendimiento_inversiones    <- ' + (Number(val("rendimiento")) / 100),
+      'escenario                  <- "' + (val("escenario") || "base") + '"',
+      'inflacion_pesos_mensual    <- ' + (Number(val("inflacion_pesos")) / 100),
+      'inflacion_dolar_anual      <- ' + (Number(val("inflacion_dolar")) / 100),
+      'prob_crisis_ui             <- ' + (Number(val("prob_crisis")) / 100),
       'ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,',
       '                   valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,',
-      '                   alquiler_mensual_usd, deposito_meses, comision_meses,',
-      '                   ubicacion, crecimiento_salario_anual, rendimiento_inversiones,',
-      '                   n_simulaciones, escritura_pct, horizonte_anos,',
-      '                   escenario, expensas_mensual_usd, salario_declarado_usd)'
+      '                   alquiler_mensual_usd, ubicacion, rendimiento_inversiones,',
+      '                   expensas_mensual_usd, escenario,',
+      '                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui)'
     ].join("\n");
   }
 
