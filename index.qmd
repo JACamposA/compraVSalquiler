@@ -377,12 +377,12 @@ construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_aho
                               valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
                               alquiler_mensual_usd, deposito_meses, comision_meses,
                               ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                              n_simulaciones) {
+                              n_simulaciones, escritura_pct = 0.10) {
   apreciacion_propiedad <- if (ubicacion == "GBA") 0.01 else 0.03
   meses_totales <- plazo_anos * 12
   monto_credito <- valor_propiedad_usd * (1 - enganche_pct)
   enganche <- valor_propiedad_usd * enganche_pct
-  gastos_escritura <- valor_propiedad_usd * 0.10
+  gastos_escritura <- valor_propiedad_usd * escritura_pct
   costo_total_compra <- enganche + gastos_escritura
   ahorros_excedentes <- max(0, ahorros_actuales_usd - costo_total_compra)
   
@@ -392,7 +392,7 @@ construir_params <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_aho
     enganche_pct = enganche_pct, enganche_usd = enganche, monto_credito_usd = monto_credito,
     costo_total_compra = costo_total_compra, ahorros_excedentes_usd = ahorros_excedentes,
     plazo_anos = plazo_anos, meses_totales = meses_totales, tasa_real_uva_anual = tasa_real_uva_anual,
-    gastos_escritura_pct = 0.10, costos_venta_pct = 0.06, costo_mantenimiento_anual_pct = 0.02,
+    gastos_escritura_pct = escritura_pct, costos_venta_pct = 0.06, costo_mantenimiento_anual_pct = 0.02,
     impuesto_inmobiliario_anual = 0.01, seguro_hogar_anual_pct = 0.003,
     alquiler_mensual_inicial_usd = alquiler_mensual_usd, deposito_alquiler_meses = deposito_meses,
     comision_inmobiliaria_alquiler = comision_meses, inversion_inicial_alquiler = ahorros_actuales_usd,
@@ -452,14 +452,16 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                                 valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
                                 alquiler_mensual_usd, deposito_meses, comision_meses,
                                 ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                                n_simulaciones) {
-  
+                                n_simulaciones, escritura_pct = 0.10, horizonte_anos = NULL) {
+
+  horizonte_efectivo <- if (is.null(horizonte_anos) || horizonte_anos >= plazo_anos) plazo_anos else as.integer(horizonte_anos)
+
   # Build params
- params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
+  params <- construir_params(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                               valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
                               alquiler_mensual_usd, deposito_meses, comision_meses,
                               ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                              n_simulaciones)
+                              n_simulaciones, escritura_pct)
   
   # --- Resumen simple: matematica directa, sin Monte Carlo, en USD de hoy ---
   # Usa la misma tasa mensual que el motor de simulacion (division simple,
@@ -488,10 +490,13 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   emergencia_post_compra <- ahorros_actuales_usd - costo_inicial_compra
   meses_emergencia       <- if (salario_mensual_usd > 0) emergencia_post_compra / salario_mensual_usd else 0
 
+  total_pagado_credito_h  <- costo_mensual_compra * min(horizonte_efectivo, plazo_anos) * 12
+  total_pagado_alquiler_h <- alquiler_mensual_usd * 12 * horizonte_efectivo
+
   cat(sprintf(
     "@@RESUMEN@@plazo=%d|compra_inicial=%.0f|compra_cuota=%.0f|compra_gastos=%.0f|compra_total=%.0f|alquiler_inicial=%.0f|alquiler_cuota=%.0f|alquiler_total=%.0f@@\n",
-    plazo_anos, costo_inicial_compra, cuota_mensual_credito, gastos_propietario_mensual, total_pagado_credito,
-    costo_inicial_alquiler, alquiler_mensual_usd, total_pagado_alquiler
+    horizonte_efectivo, costo_inicial_compra, cuota_mensual_credito, gastos_propietario_mensual, total_pagado_credito_h,
+    costo_inicial_alquiler, alquiler_mensual_usd, total_pagado_alquiler_h
   ))
 
   cat(sprintf(
@@ -503,9 +508,9 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   # Run simulation
   resultados <- ejecutar_simulacion_completa(params)
   
-  # Calculate statistics
+  # Calculate statistics at the planning horizon
   resultados_final <- resultados %>%
-    filter(año == params$plazo_anos) %>%
+    filter(año == horizonte_efectivo) %>%
     mutate(tipo_clean = ifelse(tipo == "Compra (UVA)", "Compra", "Alquiler"))
   
   final_compra <- resultados_final$patrimonio[resultados_final$tipo_clean == "Compra"]
@@ -552,14 +557,14 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
               ifelse(is.na(breakeven_ano), "nunca", as.character(breakeven_ano))))
 
   cat(sprintf(
-    "@@CONFIGURACION@@ahorros=%.0f|salario=%.0f|propiedad=%.0f|credito=%.0f|plazo=%d|alquiler=%.0f|ubicacion=%s@@\n",
+    "@@CONFIGURACION@@ahorros=%.0f|salario=%.0f|propiedad=%.0f|credito=%.0f|plazo=%d|horizonte=%d|alquiler=%.0f|ubicacion=%s@@\n",
     ahorros_actuales_usd, salario_mensual_usd, valor_propiedad_usd, params$monto_credito_usd,
-    plazo_anos, alquiler_mensual_usd, ubicacion
+    plazo_anos, horizonte_efectivo, alquiler_mensual_usd, ubicacion
   ))
 
   cat(sprintf(
     "@@PATRIMONIO@@plazo=%d|compra_media=%.0f|compra_q10=%.0f|compra_q90=%.0f|compra_peor=%.0f|alquiler_media=%.0f|alquiler_q10=%.0f|alquiler_q90=%.0f|alquiler_peor=%.0f@@\n",
-    plazo_anos, s_compra$media, s_compra$q10, s_compra$q90, s_compra$peor_5pct,
+    horizonte_efectivo, s_compra$media, s_compra$q10, s_compra$q90, s_compra$peor_5pct,
     s_alquiler$media, s_alquiler$q10, s_alquiler$q90, s_alquiler$peor_5pct
   ))
 
@@ -746,9 +751,21 @@ message("Motor de simulación cargado")
 </div>
 
 <div class="slider-group">
+<label>Gastos de escritura <span class="slider-value" id="val-escritura">10%</span></label>
+<input type="range" id="sl-escritura" min="3" max="20" step="0.5" value="10">
+<span class="hint">% del valor: escribanía, sellados e impuestos. Varía por jurisdicción y escribano.</span>
+</div>
+
+<div class="slider-group">
 <label>Plazo del crédito <span class="slider-value" id="val-plazo">25 años</span></label>
 <input type="range" id="sl-plazo" min="5" max="35" step="1" value="25">
 <span class="hint">Duración del crédito UVA</span>
+</div>
+
+<div class="slider-group">
+<label>Años que planeás quedarte <span class="slider-value" id="val-horizonte">15 años</span></label>
+<input type="range" id="sl-horizonte" min="1" max="35" step="1" value="15">
+<span class="hint">El análisis final se muestra en este año — si vendés antes del fin del crédito, los resultados cambian bastante.</span>
 </div>
 
 <div class="slider-group">
@@ -877,6 +894,8 @@ comision_meses             <- 1
 ubicacion                  <- "GBA"
 crecimiento_salario_anual  <- 0.08
 rendimiento_inversiones    <- 0.07
+escritura_pct              <- 0.10
+horizonte_anos             <- 15
 
 n_simulaciones             <- 500
 
@@ -884,7 +903,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                    valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
                    alquiler_mensual_usd, deposito_meses, comision_meses,
                    ubicacion, crecimiento_salario_anual, rendimiento_inversiones,
-                   n_simulaciones)
+                   n_simulaciones, escritura_pct, horizonte_anos)
 ```
 
 </div>
@@ -898,7 +917,9 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     tasa_ahorro:  { id: "sl-tasa_ahorro",  fmt: v => v + "%" },
     propiedad:    { id: "sl-propiedad",    fmt: v => "$" + Number(v).toLocaleString("en-US") },
     enganche:     { id: "sl-enganche",     fmt: v => v + "%" },
+    escritura:    { id: "sl-escritura",    fmt: v => v + "%" },
     plazo:        { id: "sl-plazo",        fmt: v => v + " años" },
+    horizonte:    { id: "sl-horizonte",    fmt: v => v + " años" },
     tasa_uva:     { id: "sl-tasa_uva",     fmt: v => v + "%" },
     alquiler:     { id: "sl-alquiler",     fmt: v => "$" + Number(v).toLocaleString("en-US") },
     deposito:     { id: "sl-deposito",     fmt: v => v },
@@ -1010,12 +1031,13 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     if (!diaUnoCard) return;
     if (currentMode !== "comprar") { diaUnoCard.style.display = "none"; return; }
     diaUnoCard.style.display = "";
-    const ahorros   = Number(document.getElementById(sliders.ahorros.id).value);
-    const propiedad = Number(document.getElementById(sliders.propiedad.id).value);
-    const salario   = Number(document.getElementById(sliders.salario.id).value);
-    const enganchePct = Number(document.getElementById(sliders.enganche.id).value) / 100;
+    const ahorros      = Number(document.getElementById(sliders.ahorros.id).value);
+    const propiedad    = Number(document.getElementById(sliders.propiedad.id).value);
+    const salario      = Number(document.getElementById(sliders.salario.id).value);
+    const enganchePct  = Number(document.getElementById(sliders.enganche.id).value) / 100;
+    const escrituraPct = Number(document.getElementById(sliders.escritura.id).value) / 100;
     const anticipo   = propiedad * enganchePct;
-    const escritura  = propiedad * 0.10;
+    const escritura  = propiedad * escrituraPct;
     const minimo     = anticipo + escritura;
     const reserva    = salario * 3;
     const recomendado = minimo + reserva;
@@ -1029,7 +1051,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     diaUnoCard.innerHTML =
       '<div class="duno-title"><span class="dot"></span> Lo que necesitás el día de la firma</div>' +
       row('Anticipo (' + Math.round(enganchePct * 100) + '%)', anticipo) +
-      row('Gastos de escritura (10%)', escritura) +
+      row('Gastos de escritura (' + Math.round(escrituraPct * 100) + '%)', escritura) +
       row('Total mínimo para firmar', minimo, alcanzaMin ? 'duno-ok' : 'duno-warn') +
       row('Reserva recomendada (3 meses de salario)', reserva) +
       row('Total recomendado', recomendado, alcanzaRec ? 'duno-ok' : 'duno-warn') +
@@ -1051,6 +1073,17 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   });
   document.getElementById(sliders.rendimiento.id).addEventListener('input', function () {
     document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
+  });
+
+  // Keep horizonte ≤ plazo
+  document.getElementById(sliders.plazo.id).addEventListener('input', function () {
+    const plazoEl = document.getElementById(sliders.plazo.id);
+    const horizEl = document.getElementById(sliders.horizonte.id);
+    horizEl.max = plazoEl.value;
+    if (Number(horizEl.value) > Number(plazoEl.value)) {
+      horizEl.value = plazoEl.value;
+      refreshLabel('horizonte');
+    }
   });
 
   Object.keys(sliders).forEach(function (key) {
@@ -1097,12 +1130,14 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       'ubicacion                  <- "' + ubicacion + '"',
       'crecimiento_salario_anual  <- ' + (Number(val("crecimiento")) / 100),
       'rendimiento_inversiones    <- ' + (Number(val("rendimiento")) / 100),
+      'escritura_pct              <- ' + (Number(val("escritura")) / 100),
+      'horizonte_anos             <- ' + val("horizonte"),
       'n_simulaciones             <- ' + val("nsim"),
       'ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,',
       '                   valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,',
       '                   alquiler_mensual_usd, deposito_meses, comision_meses,',
       '                   ubicacion, crecimiento_salario_anual, rendimiento_inversiones,',
-      '                   n_simulaciones)'
+      '                   n_simulaciones, escritura_pct, horizonte_anos)'
     ].join("\n");
   }
 
