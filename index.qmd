@@ -870,7 +870,8 @@ message("Motor de simulación cargado")
 
 </div>
 
-<button class="avanzado-toggle" id="avanzado-toggle">Parámetros de inversión ▼</button>
+<div id="comprar-extras">
+<button class="avanzado-toggle" id="avanzado-toggle">Avanzado ▼</button>
 
 <div class="slider-grid avanzado-panel" id="avanzado-panel">
 
@@ -914,6 +915,7 @@ message("Motor de simulación cargado")
 <span class="hint">Chance de que ocurra un episodio de crisis (devaluación brusca, caída de salario real) en un año. Argentina históricamente ~10-15%.</span>
 </div>
 
+</div>
 </div>
 
 <div class="slider-grid" id="sliders-invertir" style="display:none">
@@ -1093,6 +1095,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
   const modeToggleBtns = document.querySelectorAll(".mode-toggle-btn");
   const slidersComprar = document.getElementById("sliders-comprar");
   const slidersInvertir = document.getElementById("sliders-invertir");
+  const comprarExtras = document.getElementById("comprar-extras");
 
   function setMode(mode) {
     currentMode = mode;
@@ -1100,6 +1103,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       btn.classList.toggle("active", btn.dataset.mode === mode);
     });
     slidersComprar.style.display = mode === "comprar" ? "" : "none";
+    if (comprarExtras) comprarExtras.style.display = mode === "comprar" ? "" : "none";
     slidersInvertir.style.display = mode === "invertir" ? "" : "none";
     status.textContent = "Listo para calcular";
     updateDiaUno();
@@ -1199,7 +1203,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     avanzadoBtn.addEventListener('click', function () {
       avanzadoOpen = !avanzadoOpen;
       avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
-      avanzadoBtn.textContent = avanzadoOpen ? 'Parámetros de inversión ▲' : 'Parámetros de inversión ▼';
+      avanzadoBtn.textContent = avanzadoOpen ? 'Avanzado ▲' : 'Avanzado ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
     });
   }

@@ -1995,8 +1995,9 @@ Simulador de Inversión
 <p><label>Ubicación</label> <select class="app-select" id="sl-ubicacion"> <option value="CABA">CABA</option> <option value="GBA" selected="">GBA</option> </select> <span class="hint">CABA: ~3% apreciación anual | GBA: ~0.5%</span></p>
 </div>
 </div>
+<div id="comprar-extras">
 <button class="avanzado-toggle" id="avanzado-toggle">
-Parámetros de inversión ▼
+Avanzado ▼
 </button>
 <div id="avanzado-panel" class="slider-grid avanzado-panel">
 <div class="slider-group">
@@ -2021,6 +2022,7 @@ Parámetros de inversión ▼
 </div>
 <div class="slider-group">
 <p><label>Probabilidad de crisis anual <span id="val-prob_crisis" class="slider-value">12%</span></label> <input type="range" id="sl-prob_crisis" min="2" max="30" step="1" value="12"> <span class="hint">Chance de que ocurra un episodio de crisis (devaluación brusca, caída de salario real) en un año. Argentina históricamente ~10-15%.</span></p>
+</div>
 </div>
 </div>
 <div id="sliders-invertir" class="slider-grid" style="display:none">
@@ -2153,6 +2155,7 @@ Calcular
   const modeToggleBtns = document.querySelectorAll(".mode-toggle-btn");
   const slidersComprar = document.getElementById("sliders-comprar");
   const slidersInvertir = document.getElementById("sliders-invertir");
+  const comprarExtras = document.getElementById("comprar-extras");
 
   function setMode(mode) {
     currentMode = mode;
@@ -2160,6 +2163,7 @@ Calcular
       btn.classList.toggle("active", btn.dataset.mode === mode);
     });
     slidersComprar.style.display = mode === "comprar" ? "" : "none";
+    if (comprarExtras) comprarExtras.style.display = mode === "comprar" ? "" : "none";
     slidersInvertir.style.display = mode === "invertir" ? "" : "none";
     status.textContent = "Listo para calcular";
     updateDiaUno();
@@ -2259,7 +2263,7 @@ Calcular
     avanzadoBtn.addEventListener('click', function () {
       avanzadoOpen = !avanzadoOpen;
       avanzadoPanel.classList.toggle('avanzado-panel--open', avanzadoOpen);
-      avanzadoBtn.textContent = avanzadoOpen ? 'Parámetros de inversión ▲' : 'Parámetros de inversión ▼';
+      avanzadoBtn.textContent = avanzadoOpen ? 'Avanzado ▲' : 'Avanzado ▼';
       avanzadoBtn.classList.toggle('avanzado-open', avanzadoOpen);
     });
   }
