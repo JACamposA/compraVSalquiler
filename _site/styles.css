@@ -1,0 +1,588 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --ink: #1a1f2b;
+  --muted: #6b7280;
+  --accent: #2e86c1;
+  --accent-2: #27ae60;
+  --accent-grad: linear-gradient(135deg, #2e86c1 0%, #6c5ce7 100%);
+  --border: #e6e9f0;
+  --shadow: 0 10px 30px -12px rgba(26, 31, 43, 0.18);
+  --radius: 18px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  body {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/bg-mobile.png');
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/bg-desktop.png');
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+  }
+}
+
+#quarto-content > * {
+  max-width: 980px;
+}
+
+/* ---------------- Hero ---------------- */
+/* Dark, matching the app-card / console panels below it instead of the old bright gradient. */
+.app-hero {
+  background: #11151c;
+  color: #e8edf5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 2.6rem 2.2rem;
+  margin-bottom: 1.8rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-grad);
+}
+
+.app-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.06), transparent 60%);
+}
+
+.app-hero h1 {
+  font-weight: 800;
+  font-size: 2rem;
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.app-hero p {
+  margin: 0;
+  color: #8d96a8;
+  font-size: 1.05rem;
+}
+
+title-block-header,
+.quarto-title-block {
+  display: none !important;
+}
+
+/* quarto-webr injects a "webR Code Links" / "View R History" widget into
+   #quarto-margin-sidebar, which only ever holds that widget on this page. */
+#quarto-margin-sidebar {
+  display: none !important;
+}
+
+/* ---------------- Cards / panels ---------------- */
+/* Dark, matching the result console below it instead of a glaring white panel. */
+.app-card {
+  background: #11151c;
+  color: #e8edf5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.6rem;
+  box-shadow: var(--shadow);
+}
+
+.app-card h2, .app-card h3 {
+  margin-top: 0;
+  font-weight: 700;
+  color: #fff;
+}
+
+.app-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 1.1rem;
+  color: #fff;
+}
+
+.app-section-title .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  display: inline-block;
+}
+
+/* ---------------- Slider form ---------------- */
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.4rem 1.8rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.slider-group label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: #e8edf5;
+}
+
+.slider-group .hint {
+  font-weight: 400;
+  color: #8d96a8;
+  font-size: 0.78rem;
+}
+
+.slider-value {
+  font-weight: 700;
+  color: #7fc1ec;
+  background: rgba(127, 193, 236, 0.15);
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #2a3140 var(--fill, 50%), #2a3140 100%);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+
+select.app-select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #1a202c;
+  color: #e8edf5;
+}
+
+.ahorros-warning {
+  display: none;
+  margin-top: 1.4rem;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #ffd966;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.ahorros-warning.active {
+  display: block;
+}
+
+/* ---------------- Run button ---------------- */
+.run-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-top: 1.8rem;
+}
+
+#btn-calcular {
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.85rem 2.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -6px rgba(46, 134, 193, 0.55);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+#btn-calcular:hover { transform: translateY(-1px); }
+#btn-calcular:disabled { opacity: 0.6; cursor: progress; transform: none; }
+
+.run-spinner {
+  display: none;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.run-spinner.active {
+  display: inline-block;
+  animation: qwebr-house-spin 1.2s linear infinite;
+}
+
+.run-status {
+  font-size: 0.9rem;
+  color: #8d96a8;
+  font-weight: 500;
+}
+
+/* ---------------- Engine chunk: no chrome of its own ---------------- */
+/* The wrapper itself stays invisible; only the actual output gets card styling,
+   so there is no empty box before a calculation has run. */
+#sim-app {
+  margin-top: 0.4rem;
+}
+
+/* Hide the Monaco code editor, its toolbar, and the run/reset/copy buttons */
+#sim-app .qwebr-editor-toolbar,
+#sim-app .qwebr-editor {
+  display: none;
+}
+
+/* quarto-webr's loading box (for the hidden setup chunk, rendered right
+   after the hero rather than inside #sim-app) reports raw package-install
+   progress ("Installing package 3 out of 6: dplyr"). The user is busy with
+   the sliders during the few seconds this takes, so just hide it outright
+   rather than showing any loading indicator. */
+.qwebr-non-interactive-loading-container {
+  display: none !important;
+}
+
+@keyframes qwebr-house-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------------- Output styling ---------------- */
+#sim-app .qwebr-output-code-area {
+  background: #11151c;
+  color: #e8edf5;
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+  box-shadow: var(--shadow);
+  margin: 0.6rem 0 1.6rem 0;
+}
+
+#sim-app .qwebr-output-code-area pre {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-line {
+  color: #c4ccd9;
+}
+
+/* quarto-webr's own stylesheet sets a near-black color on the stdout/stderr
+   code elements with higher specificity (body.quarto-light ...), which made
+   the text unreadable against our dark console background. Force it back. */
+body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout,
+#sim-app .qwebr-output-code-area code.qwebr-output-code-stdout {
+  color: inherit;
+}
+
+#sim-app .qwebr-output-code-area .rs-heading {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: 0.3rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-rule {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0.5rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-rule-strong {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent-grad);
+  margin: 0.9rem 0;
+}
+
+#sim-app .qwebr-output-graph-area img {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 0.8rem 0 1.6rem 0;
+  background: var(--card);
+  padding: 0.8rem;
+}
+
+#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 0.8rem 0 1.6rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+}
+
+#sim-app .qwebr-output-graph-area figure.qwebr-canvas-image canvas {
+  display: block;
+  border-radius: calc(var(--radius) - 0.6rem);
+  max-width: 100%;
+}
+
+#sim-app .qwebr-output-graph-area .qwebr-canvas-image-download-btn {
+  display: none !important;
+}
+
+#sim-app .qwebr-output-graph-area figcaption {
+  font-size: 0.85rem;
+  color: #8d96a8;
+  text-align: center;
+  margin-top: 0.4rem;
+}
+
+#sim-app .qwebr-output-graph-area .rs-graph-blurb {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #c4ccd9;
+  line-height: 1.5;
+  background: #11151c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  margin: 0.8rem 0 0.6rem 0;
+}
+
+/* ---------------- Result cards (rendered inside the dark console area) ---------------- */
+#sim-app .qwebr-output-code-area .rs-section-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+  margin: 1.2rem 0 0.6rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0.4rem 0 1.2rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-card {
+  font-family: 'Inter', sans-serif;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-compra {
+  border-left: 3px solid var(--accent);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-alquiler {
+  border-left: 3px solid var(--accent-2);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 0.7rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  color: #c4ccd9;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row strong {
+  color: #fff;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-row-total {
+  border-bottom: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin-top: 0.2rem;
+  padding-top: 0.55rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-card-note {
+  margin-top: 0.7rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+#sim-app .qwebr-output-code-area .rs-reco-card {
+  font-family: 'Inter', sans-serif;
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  margin: 0.6rem 0 1.2rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#sim-app .qwebr-output-code-area .rs-badge {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-comprar {
+  background: rgba(46, 134, 193, 0.25);
+  color: #7fc1ec;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-alquilar {
+  background: rgba(39, 174, 96, 0.25);
+  color: #6fe0a0;
+}
+
+#sim-app .qwebr-output-code-area .rs-badge-empate {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e8edf5;
+}
+
+#sim-app .qwebr-output-code-area .rs-reco-detail {
+  font-size: 0.9rem;
+  color: #e8edf5;
+  line-height: 1.5;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-card {
+  font-family: 'Inter', sans-serif;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  margin: 0.4rem 0 1.2rem 0;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#sim-app .qwebr-output-code-area .rs-config-item strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+/* ---------------- Callouts (expandable details / disclaimer) ---------------- */
+.callout {
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #11151c !important;
+  border-right-color: rgba(255, 255, 255, 0.1) !important;
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.callout-header {
+  background-color: #11151c !important;
+}
+
+.callout-body-container {
+  background: #11151c;
+}
+
+.callout-title-container {
+  color: #fff;
+  opacity: 1 !important;
+}
+
+.callout-body-container,
+.callout-body-container p,
+.callout-body-container li,
+.callout-body-container dt,
+.callout-body-container dd {
+  color: #c4ccd9;
+}
+
+/* The note/warning type icons and collapse chevron are baked-in dark SVGs
+   (data-uri background-images), invisible against a dark callout body, so
+   invert the ones that aren't already a visible color on dark (the warning
+   icon is amber and stays untouched - already visible). */
+.callout-note .callout-icon::before,
+.callout-toggle::before {
+  filter: invert(1);
+}
+
+/* Keep the warning callout's left border + icon a loud amber so it still
+   reads as "pay attention to this" against the dark theme. */
+.callout-warning.callout {
+  border-left-color: #f39c12 !important;
+}
