@@ -24,7 +24,7 @@ body {
     background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('images/bg-mobile.png');
     background-size: cover;
     background-position: top center;
-    background-attachment: fixed;
+    background-attachment: scroll;
   }
 }
 
@@ -210,6 +210,18 @@ input[type="range"] {
   background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #2a3140 var(--fill, 50%), #2a3140 100%);
   outline: none;
   cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #2a3140 var(--fill, 50%), #2a3140 100%);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 50%), #2a3140 var(--fill, 50%), #2a3140 100%);
 }
 
 input[type="range"]::-webkit-slider-thumb {
