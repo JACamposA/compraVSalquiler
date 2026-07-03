@@ -98,6 +98,14 @@ Mode switch clears the output area. Inputs are persisted to `localStorage` (key:
 
 Correlations: inflation↔FX=0.80, salary↔inflation=0.30, real estate↔stocks=0.40, rent↔inflation=0.60, real estate↔inflation=0.50.
 
+**Path symmetry guarantees** (both paths per simulation receive identical):
+- The 6 shock vectors above
+- The crisis regime vector
+- Life-event draws
+- FX-jump occurrence and magnitude (pre-drawn per month as `shocks$salto_ocurre` / `shocks$salto_magnitud` in `ejecutar_simulacion_completa`)
+- Stock-crash dynamics during crisis: both portfolios take `−caida_bolsa/duracion_media` per crisis month
+- Expensas: both buyer and renter pay `expensas_mensual_usd` monthly (they cancel in `diferencia_mensual`)
+
 ### Crisis model (Argentine-specific)
 
 - Default 12% annual probability (configurable 2–30%)
@@ -118,18 +126,18 @@ Correlations: inflation↔FX=0.80, salary↔inflation=0.30, real estate↔stocks
 
 ### UVA mortgage mechanics
 
-- Real rate formula: `cuota = deuda × (r(1+r)^n)/((1+r)^n - 1)` where r = `tasa_real_uva_anual/12`
+- Real rate formula: `cuota = deuda × (r(1+r)^n)/((1+r)^n - 1)` where r = `tasa_real_uva_anual/12`; at r = 0 falls back to `deuda/n` (straight-line)
 - UVA index tracks peso inflation monthly; cuota in USD = `cuota_uva × uva_index / tipo_cambio`
 - Financial stress threshold: cuota/income > 40%
 - Operating costs on top of cuota: maintenance 1.5%/yr + property tax 1%/yr + insurance 0.3%/yr + expensas
 
-### Tax model
+### Tax model (symmetric between buyer and renter portfolios)
 
 - Real estate capital gains: 15% (waived if primary residence + ≥2 years)
 - Personal property tax: 0.5% on value above $100k USD (configurable, waivable for primary residence)
-- Financial gains tax: 15%
-- Dividend tax: 7% annually on investment portfolio
-- Emergency debt accrues at 10%/yr if cash runs out
+- Financial gains tax at exit: 15% on **actual gains above cost basis** — both paths track `base_costo_inv` (deposits add to basis; withdrawals clamp basis to portfolio value; market losses don't reduce basis)
+- Dividend tax: 7% annually on 2% assumed yield — applied to **both** portfolios
+- Emergency debt accrues at 10%/yr if cash runs out (buyer only)
 
 ### Behavioral finance (renter)
 
@@ -198,9 +206,13 @@ The bank qualification check uses a single `tope_ratio` variable rather than a h
 **R:** `califica_banco <- cuota_sobre_declarado <= (tope_ratio * 100)` where `cuota_sobre_declarado = cuota_mensual_credito / salario_declarado_usd * 100`.
 
 **No-califica warning** (shown in `@@RECOMENDACION@@` card when `tipo=comprar` and `califica=no`):
-- `cuota_usd` = `cuota_mensual_credito` (mortgage payment, the number banks check)
-- `salario_minimo_usd` = `cuota_mensual_credito / tope_ratio` (minimum salary to qualify)
-- Banner: "Tu salario ($X/mes) es menor que el mínimo requerido para esta cuota ($Y/mes). Necesitarías ganar al menos $Z/mes para calificar."
+- `cuota_usd` = `cuota_mensual_credito`; `salario_minimo_usd` = `cuota_mensual_credito / tope_ratio`
+- Banner: "Para una cuota de $Y/mes necesitás ganar al menos $Z/mes. Tu salario actual ($X/mes) no alcanza."
+- Followed by actionable fix list (JS-computed from emitted fields):
+  - `propiedad_max` = `round(credito_max / (1-enganche_pct))` where `credito_max = target_cuota / factor_amort`
+  - `enganche_min_pct` = `ceiling((1 - credito_max / valor_propiedad_usd) * 100)`
+  - `plazo_min_anos` = `ceiling(log(k/(k-r)) / log(1+r) / 12)` where `k = target_cuota / monto_credito`
+- JS only shows each suggestion if within slider bounds (propMax ≥ $20k; enganMin ≤ 80%; plazoMin ≤ 35yr)
 
 The input is **not clamped** to `tope_ratio` — it is a derived output signal (green/red), not an input limiter. Clamping would hide the "no calificás" case.
 
@@ -240,7 +252,7 @@ R prints structured markers to stdout; JS parses and renders them as styled card
 |---|---|---|
 | `@@RESUMEN@@` | plazo, compra_inicial, compra_cuota, compra_gastos, compra_total, alquiler_inicial, alquiler_cuota, alquiler_total | Two-column card: Comprando vs Alquilando |
 | `@@INDICADORES@@` | ratio_pr, cuota_ingreso, cuota_declarado, califica, diferencia_mensual, emergencia, meses_emergencia, **tope_ratio** | Grid of 5 key-indicator tiles; tope_ratio drives eligibility display |
-| `@@RECOMENDACION@@` | tipo (comprar/alquilar/empate), diferencia, prob, prob_alquiler, califica (si/no), cuota_usd, salario_usd, salario_minimo_usd | Badge + detail sentence; red warning banner when tipo=comprar and califica=no |
+| `@@RECOMENDACION@@` | tipo, diferencia, prob, prob_alquiler, califica (si/no), cuota_usd, salario_usd, salario_minimo_usd, propiedad_usd, propiedad_max, enganche_min_pct, plazo_min_anos | Badge + detail sentence; red warning banner with actionable fix suggestions when tipo=comprar and califica=no |
 | `@@BREAKEVEN@@` | ano (number or "nunca") | Yellow-accented callout card |
 | `@@CONFIGURACION@@` | ahorros, salario, propiedad, credito, plazo, horizonte, alquiler, ubicacion | Grid of input echoes |
 | `@@PATRIMONIO@@` | plazo, compra_media, compra_q10, compra_q90, compra_peor, alquiler_* | Two-column card with P10/P50/P90/worst |

@@ -117,10 +117,13 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
   salario_base_pre_crisis <- salario_mensual
   deuda_uva <- p$monto_credito_usd
   inversiones_comprador <- p$ahorros_excedentes_usd
+  base_costo_inv <- inversiones_comprador
   deuda_emergencia <- 0; uva_index <- 1; tipo_cambio <- 1
   tasa_real_mensual <- p$tasa_real_uva_anual / 12
   n_pagos <- p$meses_totales
-  cuota_mensual_uva <- deuda_uva * (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
+  cuota_mensual_uva <- if (tasa_real_mensual > 0)
+    deuda_uva * (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
+  else deuda_uva / n_pagos
   patrimonio_neto <- numeric(p$meses_totales + 1)
   en_stress <- numeric(p$meses_totales + 1)
   cuota_usd_anual <- numeric(p$plazo_anos + 1)
@@ -136,8 +139,8 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
     if (crisis_este_mes && !en_crisis_actual) {
       en_crisis_actual <- TRUE; meses_en_crisis <- 1
       salario_base_pre_crisis <- salario_mensual
-      if (runif(1) < p$prob_salto_cambiario_en_crisis) {
-        magnitud_salto <- runif(1, p$salto_cambiario_min, p$salto_cambiario_max)
+      if (shocks$salto_ocurre[mes]) {
+        magnitud_salto <- shocks$salto_magnitud[mes]
         tipo_cambio <- tipo_cambio * (1 + magnitud_salto)
         salario_mensual <- salario_mensual / (1 + magnitud_salto * 0.80)
       }
@@ -173,11 +176,13 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
         costo <- valor_propiedad_actual * p$costo_reparacion_mayor_pct
         if (inversiones_comprador >= costo) inversiones_comprador <- inversiones_comprador - costo
         else { deuda_emergencia <- deuda_emergencia + (costo - inversiones_comprador); inversiones_comprador <- 0 }
+        base_costo_inv <- min(base_costo_inv, inversiones_comprador)
       }
       if (eventos$problema_legal[ano_actual]) {
         costo <- valor_propiedad_actual * p$costo_problema_legal_pct
         if (inversiones_comprador >= costo) inversiones_comprador <- inversiones_comprador - costo
         else { deuda_emergencia <- deuda_emergencia + (costo - inversiones_comprador); inversiones_comprador <- 0 }
+        base_costo_inv <- min(base_costo_inv, inversiones_comprador)
       }
     }
     
@@ -217,22 +222,29 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
       if (flujo_neto >= 0) {
         if (deuda_emergencia > 0) { pago <- min(flujo_neto, deuda_emergencia); deuda_emergencia <- deuda_emergencia - pago; flujo_neto <- flujo_neto - pago }
         inversiones_comprador <- inversiones_comprador + flujo_neto
+        base_costo_inv <- base_costo_inv + flujo_neto
       } else {
         deficit <- -flujo_neto
         if (inversiones_comprador >= deficit) inversiones_comprador <- inversiones_comprador - deficit
         else { deuda_emergencia <- deuda_emergencia + (deficit - inversiones_comprador); inversiones_comprador <- 0 }
+        base_costo_inv <- min(base_costo_inv, inversiones_comprador)
       }
     } else {
       if (inversiones_comprador >= gastos_vivienda_total) inversiones_comprador <- inversiones_comprador - gastos_vivienda_total
       else { deuda_emergencia <- deuda_emergencia + (gastos_vivienda_total - inversiones_comprador); inversiones_comprador <- 0 }
+      base_costo_inv <- min(base_costo_inv, inversiones_comprador)
     }
     
     if (mes %% 12 == 0) {
+      if (inversiones_comprador > 0) {
+        inversiones_comprador <- inversiones_comprador - (inversiones_comprador * 0.02 * p$tasa_impuesto_dividendos)
+      }
       patrimonio_imponible <- max(0, valor_propiedad_actual - p$umbral_bienes_personales_usd)
       if (patrimonio_imponible > 0 && !p$exencion_vivienda_unica) {
         costo_bp <- patrimonio_imponible * p$tasa_bienes_personales
         if (inversiones_comprador >= costo_bp) inversiones_comprador <- inversiones_comprador - costo_bp
         else { deuda_emergencia <- deuda_emergencia + (costo_bp - inversiones_comprador); inversiones_comprador <- 0 }
+        base_costo_inv <- min(base_costo_inv, inversiones_comprador)
       }
     }
     
@@ -255,8 +267,7 @@ simular_compra_completa <- function(sim_id, shocks, crisis_vector, eventos, p) {
   if (!p$exencion_vivienda_unica || p$plazo_anos < p$anos_tenencia_para_exencion) {
     if (ganancia_inmobiliaria > 0) impuesto_ganancia <- ganancia_inmobiliaria * p$tasa_ganancias_capital_inmuebles
   }
-  impuesto_inversiones <- 0
-  if (inversiones_comprador > 0) impuesto_inversiones <- (inversiones_comprador * 0.5) * p$tasa_impuesto_ganancias_financieras
+  impuesto_inversiones <- max(0, inversiones_comprador - base_costo_inv) * p$tasa_impuesto_ganancias_financieras
   patrimonio_final <- valor_venta_bruto - costo_venta - impuesto_ganancia + inversiones_comprador - impuesto_inversiones - deuda_emergencia
   utilidad_total <- NA
   if (p$modelar_utilidad) utilidad_total <- calcular_utilidad_crra(max(1, patrimonio_final) + utilidad_acumulada, p$coef_aversion_riesgo)
@@ -273,6 +284,7 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
   deposito_actual <- p$alquiler_mensual_inicial_usd * p$deposito_alquiler_meses
   comision_inicial <- p$alquiler_mensual_inicial_usd * p$comision_inmobiliaria_alquiler
   capital_invertido <- capital_inicial_bruto - comision_inicial - deposito_actual
+  base_costo_inv <- max(0, capital_invertido)
   alquiler_mensual <- p$alquiler_mensual_inicial_usd
   salario_mensual <- p$salario_mensual_inicial_usd
   salario_base_pre_crisis <- salario_mensual
@@ -288,8 +300,8 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
     if (crisis_este_mes && !en_crisis_actual) {
       en_crisis_actual <- TRUE; meses_en_crisis <- 1
       salario_base_pre_crisis <- salario_mensual
-      if (runif(1) < p$prob_salto_cambiario_en_crisis) {
-        magnitud_salto <- runif(1, p$salto_cambiario_min, p$salto_cambiario_max)
+      if (shocks$salto_ocurre[mes]) {
+        magnitud_salto <- shocks$salto_magnitud[mes]
         salario_mensual <- salario_mensual / (1 + magnitud_salto * 0.80)
       }
       salario_mensual <- salario_mensual * (1 - p$caida_salario_real_crisis)
@@ -308,12 +320,14 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
       }
       if (eventos$no_renovacion_alquiler[ano_actual]) {
         capital_invertido <- capital_invertido + deposito_actual
+        base_costo_inv <- base_costo_inv + deposito_actual
         alquiler_mensual <- alquiler_mensual * (1 + p$premium_alquiler_nuevo_pct)
         deposito_actual <- alquiler_mensual * p$deposito_alquiler_meses
         total_costos_mudanza <- p$costo_mudanza_usd + alquiler_mensual * p$comision_inmobiliaria_alquiler + deposito_actual
       }
       if (eventos$cambio_espacio[ano_actual] && !eventos$no_renovacion_alquiler[ano_actual]) {
         capital_invertido <- capital_invertido + deposito_actual
+        base_costo_inv <- base_costo_inv + deposito_actual
         alquiler_mensual <- alquiler_mensual * (1 + p$aumento_alquiler_upgrade_pct)
         deposito_actual <- alquiler_mensual * p$deposito_alquiler_meses
         total_costos_mudanza <- p$costo_mudanza_usd + alquiler_mensual * p$comision_inmobiliaria_alquiler + deposito_actual
@@ -335,8 +349,7 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
     }
     
     base_retorno <- p$rendimiento_bolsa_base / 12
-    if (crisis_este_mes && meses_en_crisis == 1) base_retorno <- -p$caida_bolsa_crisis
-    else if (crisis_este_mes) base_retorno <- p$rendimiento_bolsa_base / 12 * 0.5
+    if (crisis_este_mes) base_retorno <- -p$caida_bolsa_crisis / p$duracion_crisis_meses_media
     retorno_mes <- base_retorno + shocks$bolsa[mes] * p$volatilidad_bolsa / sqrt(12)
     
     if (p$modelar_comportamiento && !ya_vendio_panico && capital_invertido > 0) {
@@ -349,9 +362,20 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
     }
     if (ya_vendio_panico) retorno_mes <- p$tasa_libre_riesgo_anual / 12
     if (capital_invertido > 0) capital_invertido <- capital_invertido * (1 + retorno_mes)
-    if (ingreso_mes > 0) { capital_invertido <- capital_invertido + (ingreso_mes * p$tasa_ahorro_pct - alquiler_mensual)
-    } else { capital_invertido <- capital_invertido - alquiler_mensual }
-    if (total_costos_mudanza > 0) { capital_invertido <- capital_invertido - total_costos_mudanza; total_costos_mudanza <- 0 }
+    gastos_alquiler_total <- alquiler_mensual + p$expensas_mensual_usd
+    if (ingreso_mes > 0) {
+      flujo_neto <- ingreso_mes * p$tasa_ahorro_pct - gastos_alquiler_total
+      capital_invertido <- capital_invertido + flujo_neto
+      if (flujo_neto >= 0) base_costo_inv <- base_costo_inv + flujo_neto
+      else base_costo_inv <- min(base_costo_inv, max(0, capital_invertido))
+    } else {
+      capital_invertido <- capital_invertido - gastos_alquiler_total
+      base_costo_inv <- min(base_costo_inv, max(0, capital_invertido))
+    }
+    if (total_costos_mudanza > 0) {
+      capital_invertido <- capital_invertido - total_costos_mudanza; total_costos_mudanza <- 0
+      base_costo_inv <- min(base_costo_inv, max(0, capital_invertido))
+    }
     if (mes %% 12 == 0 && capital_invertido > 0) {
       capital_invertido <- capital_invertido - (capital_invertido * 0.02 * p$tasa_impuesto_dividendos)
     }
@@ -359,11 +383,8 @@ simular_alquiler_completa <- function(sim_id, shocks, crisis_vector, eventos, p)
     patrimonio_neto[mes + 1] <- capital_invertido + deposito_actual
   }
   
-  patrimonio_final <- capital_invertido + deposito_actual
-  capital_base <- capital_inicial_bruto - comision_inicial
-  if (patrimonio_final > capital_base) {
-    patrimonio_final <- patrimonio_final - ((patrimonio_final - capital_base) * p$tasa_impuesto_ganancias_financieras)
-  }
+  impuesto_inversiones <- max(0, capital_invertido - base_costo_inv) * p$tasa_impuesto_ganancias_financieras
+  patrimonio_final <- capital_invertido + deposito_actual - impuesto_inversiones
   utilidad_total <- NA
   if (p$modelar_utilidad) utilidad_total <- calcular_utilidad_crra(max(1, patrimonio_final) + utilidad_acumulada, p$coef_aversion_riesgo)
   meses_anuales <- seq(0, p$meses_totales, by = 12)
@@ -382,6 +403,10 @@ ejecutar_simulacion_completa <- function(p) {
   idx <- 1
   for (sim in 1:p$n_simulaciones) {
     shocks <- generar_shocks_correlacionados(p$meses_totales, Sigma)
+    # FX-jump draws are made once per month and shared by both paths, so the
+    # buyer and renter experience the same devaluation in the same crisis.
+    shocks$salto_ocurre   <- runif(p$meses_totales) < p$prob_salto_cambiario_en_crisis
+    shocks$salto_magnitud <- runif(p$meses_totales, p$salto_cambiario_min, p$salto_cambiario_max)
     crisis_vector <- if (p$modelar_crisis) simular_regimen_crisis(p$meses_totales, p$prob_crisis_anual, p$duracion_crisis_meses_media, p$duracion_crisis_meses_sd) else rep(FALSE, p$meses_totales)
     eventos <- if (p$modelar_eventos_vida) generar_eventos_vida(p$plazo_anos, p$prob_perdida_empleo_anual, p$duracion_desempleo_meses_media, p$duracion_desempleo_meses_sd, p$prob_aumento_significativo_anual, p$prob_cambio_carrera, p$prob_reparacion_mayor_anual, p$prob_problema_legal_propiedad, p$prob_no_renovacion_contrato, p$prob_cambio_necesidad_espacio, p$duracion_contrato_anos, p$magnitud_aumento_significativo, p$caida_temporal_cambio_carrera) else NULL
     resultados_lista[[idx]] <- simular_compra_completa(sim, shocks, crisis_vector, eventos, p)
@@ -522,8 +547,10 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   # de la simulacion.
   n_pagos <- plazo_anos * 12
   tasa_real_mensual <- tasa_real_uva_anual / 12
-  cuota_mensual_credito <- params$monto_credito_usd *
-    (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
+  cuota_mensual_credito <- if (tasa_real_mensual > 0)
+    params$monto_credito_usd *
+      (tasa_real_mensual * (1 + tasa_real_mensual)^n_pagos) / ((1 + tasa_real_mensual)^n_pagos - 1)
+  else params$monto_credito_usd / n_pagos
 
   # Gastos fijos de ser propietario (impuestos, seguro, mantenimiento) que
   # se pagan ademas de la cuota del credito, todos los meses.
@@ -551,14 +578,17 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                              as.integer(round(credito_max_cal / (1 - enganche_pct))) else NA_integer_
   enganche_min_cal      <- if (!is.na(credito_max_cal) && valor_propiedad_usd > 0)
                              max(0L, as.integer(ceiling((1 - credito_max_cal / valor_propiedad_usd) * 100))) else NA_integer_
-  plazo_min_cal         <- if (!is.na(factor_amort) && params$monto_credito_usd > 0) {
-                             k <- target_cuota_usd / params$monto_credito_usd
-                             if (k > tasa_real_mensual)
-                               as.integer(ceiling(log(k / (k - tasa_real_mensual)) / log(1 + tasa_real_mensual) / 12))
-                             else NA_integer_
+  plazo_min_cal         <- if (!is.na(factor_amort) && params$monto_credito_usd > 0 && target_cuota_usd > 0) {
+                             if (tasa_real_mensual > 0) {
+                               k <- target_cuota_usd / params$monto_credito_usd
+                               if (k > tasa_real_mensual)
+                                 as.integer(ceiling(log(k / (k - tasa_real_mensual)) / log(1 + tasa_real_mensual) / 12))
+                               else NA_integer_
+                             } else as.integer(ceiling(params$monto_credito_usd / target_cuota_usd / 12))
                            } else NA_integer_
 
-  diferencia_mensual     <- costo_mensual_compra - alquiler_mensual_usd - expensas_mensual_usd
+  # Ambos pagan expensas (dueño e inquilino), asi que se cancelan en la diferencia
+  diferencia_mensual     <- costo_mensual_compra - alquiler_mensual_usd
   emergencia_post_compra <- ahorros_actuales_usd - costo_inicial_compra
   meses_emergencia       <- if (salario_mensual_usd > 0) emergencia_post_compra / salario_mensual_usd else 0
 
@@ -1526,7 +1556,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       ind('Ratio precio / alquiler', ratio + ' meses', ratioColor, ratioHint) +
       ind('Cuota / ingreso (real)', cuota.toFixed(1) + '%', cuotaColor, cuotaHint) +
       ind('Elegibilidad hipotecaria', eligText, eligColor, 'Los bancos argentinos exigen cuota ≤ ' + topeRatioPct + '% del ingreso declarado en AFIP') +
-      ind('Costo mensual extra', difText, '#e8edf5', 'Diferencia de gasto mensual entre comprar y alquilar (incluye expensas)') +
+      ind('Costo mensual extra', difText, '#e8edf5', 'Diferencia de gasto mensual entre comprar y alquilar (las expensas se pagan en ambos casos, así que se cancelan)') +
       ind('Reserva post-compra', emText, emColor, emHint) +
       '</div>';
   }
