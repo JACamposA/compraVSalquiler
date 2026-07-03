@@ -542,6 +542,22 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   ratio_cuota_ingreso    <- costo_mensual_compra / salario_mensual_usd * 100
   cuota_sobre_declarado  <- cuota_mensual_credito / salario_declarado_usd * 100
   califica_banco         <- cuota_sobre_declarado <= (tope_ratio * 100)
+
+  # Actionable targets so the banner can show concrete slider values to try
+  target_cuota_usd      <- salario_mensual_usd * tope_ratio
+  factor_amort          <- if (params$monto_credito_usd > 0) cuota_mensual_credito / params$monto_credito_usd else NA_real_
+  credito_max_cal       <- if (!is.na(factor_amort)) target_cuota_usd / factor_amort else NA_real_
+  propiedad_max_cal     <- if (!is.na(credito_max_cal) && enganche_pct < 1)
+                             as.integer(round(credito_max_cal / (1 - enganche_pct))) else NA_integer_
+  enganche_min_cal      <- if (!is.na(credito_max_cal) && valor_propiedad_usd > 0)
+                             max(0L, as.integer(ceiling((1 - credito_max_cal / valor_propiedad_usd) * 100))) else NA_integer_
+  plazo_min_cal         <- if (!is.na(factor_amort) && params$monto_credito_usd > 0) {
+                             k <- target_cuota_usd / params$monto_credito_usd
+                             if (k > tasa_real_mensual)
+                               as.integer(ceiling(log(k / (k - tasa_real_mensual)) / log(1 + tasa_real_mensual) / 12))
+                             else NA_integer_
+                           } else NA_integer_
+
   diferencia_mensual     <- costo_mensual_compra - alquiler_mensual_usd - expensas_mensual_usd
   emergencia_post_compra <- ahorros_actuales_usd - costo_inicial_compra
   meses_emergencia       <- if (salario_mensual_usd > 0) emergencia_post_compra / salario_mensual_usd else 0
@@ -608,10 +624,14 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     prob_reco <- prob_compra_gana * 100
   }
 
-  cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f|califica=%s|cuota_usd=%.0f|salario_usd=%.0f|salario_minimo_usd=%.0f@@\n",
+  cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f|califica=%s|cuota_usd=%.0f|salario_usd=%.0f|salario_minimo_usd=%.0f|propiedad_usd=%.0f|propiedad_max=%.0f|enganche_min_pct=%d|plazo_min_anos=%s@@\n",
               tipo_reco, abs(diferencia_media), prob_reco, (1 - prob_compra_gana) * 100,
               ifelse(califica_banco, "si", "no"),
-              cuota_mensual_credito, salario_mensual_usd, cuota_mensual_credito / tope_ratio))
+              cuota_mensual_credito, salario_mensual_usd, cuota_mensual_credito / tope_ratio,
+              valor_propiedad_usd,
+              ifelse(is.na(propiedad_max_cal), 0L, propiedad_max_cal),
+              ifelse(is.na(enganche_min_cal), 0L, enganche_min_cal),
+              ifelse(is.na(plazo_min_cal), "NA", as.character(plazo_min_cal))))
   cat(sprintf("@@BREAKEVEN@@ano=%s@@\n",
               ifelse(is.na(breakeven_ano), "nunca", as.character(breakeven_ano))))
 
@@ -1382,9 +1402,27 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const detalle = tipo === "empate"
       ? "Comprar te conviene en " + f.prob + " de cada 100 escenarios probados, alquilar en " + f.prob_alquiler + "."
       : "Terminarías con aproximadamente " + usd(f.diferencia) + " más. Te conviene en " + f.prob + " de cada 100 escenarios probados.";
-    const warning = noCalifica
-      ? '<div class="rs-no-califica-banner">Tu salario (' + usd(f.salario_usd) + '/mes) es menor que el mínimo requerido para esta cuota (' + usd(f.cuota_usd) + '/mes). Necesitarías ganar al menos ' + usd(f.salario_minimo_usd) + '/mes para calificar. El análisis de compra asume que obtenés el crédito de todas formas: los resultados son hipotéticos.</div>'
-      : '';
+    let warning = '';
+    if (noCalifica) {
+      const propMax   = Number(f.propiedad_max || 0);
+      const enganMin  = Number(f.enganche_min_pct || 0);
+      const plazoMin  = f.plazo_min_anos && f.plazo_min_anos !== 'NA' ? Number(f.plazo_min_anos) : null;
+      const tips = [];
+      if (propMax >= 20000 && propMax < Number(f.propiedad_usd || 0))
+        tips.push('Bajá el valor de la propiedad a ' + usd(propMax) + ' o menos');
+      if (enganMin > 0 && enganMin <= 80)
+        tips.push('Subí el anticipo al ' + enganMin + '% o más');
+      if (plazoMin !== null && plazoMin <= 35)
+        tips.push('Extendé el plazo a ' + plazoMin + ' años o más');
+      const tipHtml = tips.length > 0
+        ? '<div class="rs-no-califica-tips"><strong>Para poder calificar:</strong><ul>' +
+          tips.map(t => '<li>' + t + '</li>').join('') + '</ul></div>'
+        : '';
+      warning = '<div class="rs-no-califica-banner">Para una cuota de ' + usd(f.cuota_usd) +
+        '/mes necesitás ganar al menos ' + usd(f.salario_minimo_usd) +
+        '/mes. Tu salario actual (' + usd(f.salario_usd) + '/mes) no alcanza.' + tipHtml +
+        '<span class="rs-no-califica-note">El análisis asume que obtenés el crédito de todas formas: los resultados son hipotéticos.</span></div>';
+    }
     return (
       '<div class="rs-reco-card">' +
         warning +
