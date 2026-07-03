@@ -502,7 +502,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
                                 alquiler_mensual_usd, ubicacion, rendimiento_inversiones,
                                 expensas_mensual_usd = 200, escenario = "base",
                                 inflacion_pesos_mensual = 0.04, inflacion_dolar_anual = 0.03,
-                                prob_crisis_ui = 0.12) {
+                                prob_crisis_ui = 0.12,
+                                tope_ratio = 0.25) {
 
   horizonte_efectivo <- plazo_anos
 
@@ -539,8 +540,8 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
 
   ratio_precio_alquiler  <- round(valor_propiedad_usd / alquiler_mensual_usd)
   ratio_cuota_ingreso    <- costo_mensual_compra / salario_mensual_usd * 100
-  cuota_sobre_declarado  <- costo_mensual_compra / salario_declarado_usd * 100
-  califica_banco         <- cuota_sobre_declarado <= 28
+  cuota_sobre_declarado  <- cuota_mensual_credito / salario_declarado_usd * 100
+  califica_banco         <- cuota_sobre_declarado <= (tope_ratio * 100)
   diferencia_mensual     <- costo_mensual_compra - alquiler_mensual_usd - expensas_mensual_usd
   emergencia_post_compra <- ahorros_actuales_usd - costo_inicial_compra
   meses_emergencia       <- if (salario_mensual_usd > 0) emergencia_post_compra / salario_mensual_usd else 0
@@ -555,10 +556,10 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
   ))
 
   cat(sprintf(
-    "@@INDICADORES@@ratio_pr=%.0f|cuota_ingreso=%.1f|cuota_declarado=%.1f|califica=%s|diferencia_mensual=%.0f|emergencia=%.0f|meses_emergencia=%.1f@@\n",
+    "@@INDICADORES@@ratio_pr=%.0f|cuota_ingreso=%.1f|cuota_declarado=%.1f|califica=%s|diferencia_mensual=%.0f|emergencia=%.0f|meses_emergencia=%.1f|tope_ratio=%.2f@@\n",
     ratio_precio_alquiler, ratio_cuota_ingreso, cuota_sobre_declarado,
     ifelse(califica_banco, "si", "no"),
-    diferencia_mensual, max(0, emergencia_post_compra), max(0, meses_emergencia)
+    diferencia_mensual, max(0, emergencia_post_compra), max(0, meses_emergencia), tope_ratio
   ))
 
   # Run simulation
@@ -607,8 +608,10 @@ ejecutar_y_mostrar <- function(ahorros_actuales_usd, salario_mensual_usd, tasa_a
     prob_reco <- prob_compra_gana * 100
   }
 
-  cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f@@\n",
-              tipo_reco, abs(diferencia_media), prob_reco, (1 - prob_compra_gana) * 100))
+  cat(sprintf("@@RECOMENDACION@@tipo=%s|diferencia=%.0f|prob=%.0f|prob_alquiler=%.0f|califica=%s|cuota_usd=%.0f|salario_usd=%.0f|salario_minimo_usd=%.0f@@\n",
+              tipo_reco, abs(diferencia_media), prob_reco, (1 - prob_compra_gana) * 100,
+              ifelse(califica_banco, "si", "no"),
+              cuota_mensual_credito, salario_mensual_usd, cuota_mensual_credito / tope_ratio))
   cat(sprintf("@@BREAKEVEN@@ano=%s@@\n",
               ifelse(is.na(breakeven_ano), "nunca", as.character(breakeven_ano))))
 
@@ -872,6 +875,16 @@ message("Motor de simulación cargado")
 <span class="hint">CABA: ~3% apreciación anual | GBA: ~0.5%</span>
 </div>
 
+<div class="slider-group">
+<label>Tipo de empleo</label>
+<div class="preset-btns" id="preset-empleo">
+  <button type="button" class="preset-btn preset-active" data-val="0">Particular / privado</button>
+  <button type="button" class="preset-btn" data-val="1">Empleado público / CERA</button>
+</div>
+<input type="hidden" id="sl-empleado-publico" value="0">
+<span class="hint">Empleados públicos y cuentas CERA califican con cuota hasta 30% del sueldo (vs. 25% para el resto)</span>
+</div>
+
 </div>
 
 <div id="comprar-extras">
@@ -1012,12 +1025,14 @@ escenario                  <- "base"
 inflacion_pesos_mensual    <- 0.04
 inflacion_dolar_anual      <- 0.03
 prob_crisis_ui             <- 0.12
+tope_ratio                 <- 0.25
 
 ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
                    valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,
                    alquiler_mensual_usd, ubicacion, rendimiento_inversiones,
                    expensas_mensual_usd, escenario,
-                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui)
+                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui,
+                   tope_ratio)
 ```
 
 </div>
@@ -1078,6 +1093,8 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     if (ubicacionEl) data.ubicacion = ubicacionEl.value;
     const escenarioEl = document.getElementById("sl-escenario");
     if (escenarioEl) data.escenario = escenarioEl.value;
+    const empleoEl = document.getElementById("sl-empleado-publico");
+    if (empleoEl) data["empleado-publico"] = empleoEl.value;
     data.mode = currentMode;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1101,7 +1118,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     });
     const ubicacionEl = document.getElementById("sl-ubicacion");
     if (ubicacionEl && savedInputs.ubicacion !== undefined) ubicacionEl.value = savedInputs.ubicacion;
-    ["escenario", "preset-escenario", "rendimiento", "preset-rendimiento"].forEach(function(_, i, a) {
+    ["escenario", "preset-escenario", "rendimiento", "preset-rendimiento", "empleado-publico", "preset-empleo"].forEach(function(_, i, a) {
       if (i % 2 !== 0) return;
       const key = a[i], groupId = a[i + 1];
       const el = document.getElementById("sl-" + key);
@@ -1196,6 +1213,16 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     btn.addEventListener('click', function () {
       document.getElementById(sliders.rendimiento.id).value = btn.dataset.val;
       document.querySelectorAll('#preset-rendimiento .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
+      btn.classList.add('preset-active');
+      saveInputs();
+    });
+  });
+
+  // Preset buttons for employment type (drives tope_ratio: 0.25 private / 0.30 public)
+  document.querySelectorAll('#preset-empleo .preset-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.getElementById('sl-empleado-publico').value = btn.dataset.val;
+      document.querySelectorAll('#preset-empleo .preset-btn').forEach(function (b) { b.classList.remove('preset-active'); });
       btn.classList.add('preset-active');
       saveInputs();
     });
@@ -1299,11 +1326,13 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
       'inflacion_pesos_mensual    <- ' + (Number(val("inflacion_pesos")) / 100),
       'inflacion_dolar_anual      <- ' + (Number(val("inflacion_dolar")) / 100),
       'prob_crisis_ui             <- ' + (Number(val("prob_crisis")) / 100),
+      'tope_ratio                 <- ' + (document.getElementById('sl-empleado-publico').value === '1' ? '0.30' : '0.25'),
       'ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,',
       '                   valor_propiedad_usd, enganche_pct, plazo_anos, tasa_real_uva_anual,',
       '                   alquiler_mensual_usd, ubicacion, rendimiento_inversiones,',
       '                   expensas_mensual_usd, escenario,',
-      '                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui)'
+      '                   inflacion_pesos_mensual, inflacion_dolar_anual, prob_crisis_ui,',
+      '                   tope_ratio)'
     ].join("\n");
   }
 
@@ -1349,11 +1378,16 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const labels = { comprar: "RECOMENDACIÓN: COMPRAR", alquilar: "RECOMENDACIÓN: ALQUILAR", empate: "AMBAS OPCIONES SON SIMILARES" };
     const cls = { comprar: "rs-badge-comprar", alquilar: "rs-badge-alquilar", empate: "rs-badge-empate" };
     const tipo = f.tipo in labels ? f.tipo : "empate";
+    const noCalifica = tipo === 'comprar' && f.califica === 'no';
     const detalle = tipo === "empate"
       ? "Comprar te conviene en " + f.prob + " de cada 100 escenarios probados, alquilar en " + f.prob_alquiler + "."
       : "Terminarías con aproximadamente " + usd(f.diferencia) + " más. Te conviene en " + f.prob + " de cada 100 escenarios probados.";
+    const warning = noCalifica
+      ? '<div class="rs-no-califica-banner">Tu salario (' + usd(f.salario_usd) + '/mes) es menor que el mínimo requerido para esta cuota (' + usd(f.cuota_usd) + '/mes). Necesitarías ganar al menos ' + usd(f.salario_minimo_usd) + '/mes para calificar. El análisis de compra asume que obtenés el crédito de todas formas: los resultados son hipotéticos.</div>'
+      : '';
     return (
       '<div class="rs-reco-card">' +
+        warning +
         '<div class="rs-badge ' + cls[tipo] + '">' + labels[tipo] + "</div>" +
         '<div class="rs-reco-detail">' + detalle + "</div>" +
       "</div>"
@@ -1418,6 +1452,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const cuota = Number(f.cuota_ingreso);
     const cuotaDecl = Number(f.cuota_declarado || f.cuota_ingreso);
     const califica = f.califica === 'si';
+    const topeRatioPct = Math.round(Number(f.tope_ratio || 0.25) * 100);
     const dif = Number(f.diferencia_mensual);
     const emergencia = Number(f.emergencia);
     const meses = Number(f.meses_emergencia);
@@ -1425,13 +1460,11 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     const ratioColor = ratio < 180 ? '#6fe0a0' : ratio < 250 ? '#ffd43b' : '#ff6b6b';
     const ratioHint = ratio < 180 ? 'Relación favorable para comprar' : ratio < 250 ? 'Relación moderada' : 'Propiedad cara relativa al alquiler';
 
-    const cuotaColor = cuota < 25 ? '#6fe0a0' : cuota < 35 ? '#ffd43b' : '#ff6b6b';
-    const cuotaHint = cuota < 25 ? 'Dentro del umbral bancario (~25-30%)' : cuota < 35 ? 'Cerca del límite del banco' : 'Por encima del máximo habitual del banco';
+    const cuotaColor = cuota < 33 ? '#6fe0a0' : cuota < 50 ? '#ffd43b' : '#ff6b6b';
+    const cuotaHint = 'Cuota + impuestos + seguro + mantenimiento como % del ingreso real (indicador de carga financiera, no de elegibilidad bancaria)';
 
     const eligColor = califica ? '#6fe0a0' : '#ff6b6b';
-    const eligText = califica
-      ? 'Calificaría: ' + cuotaDecl.toFixed(1) + '% del sueldo declarado'
-      : 'No calificaría: cuota = ' + cuotaDecl.toFixed(1) + '% del sueldo declarado (máx. 28%)';
+    const eligText = 'Cuota: ' + cuotaDecl.toFixed(1) + '% del sueldo declarado (máx. ' + topeRatioPct + '%)';
 
     const difSign = dif >= 0 ? '+' : '-';
     const difText = difSign + '$' + Math.round(Math.abs(dif)).toLocaleString('en-US') + ' USD/mes vs. alquilar';
@@ -1454,7 +1487,7 @@ ejecutar_y_mostrar(ahorros_actuales_usd, salario_mensual_usd, tasa_ahorro_pct,
     return '<div class="rs-indicadores-card">' +
       ind('Ratio precio / alquiler', ratio + ' meses', ratioColor, ratioHint) +
       ind('Cuota / ingreso (real)', cuota.toFixed(1) + '%', cuotaColor, cuotaHint) +
-      ind('Elegibilidad hipotecaria', eligText, eligColor, 'Los bancos argentinos exigen cuota ≤ 25-30% del ingreso declarado en AFIP') +
+      ind('Elegibilidad hipotecaria', eligText, eligColor, 'Los bancos argentinos exigen cuota ≤ ' + topeRatioPct + '% del ingreso declarado en AFIP') +
       ind('Costo mensual extra', difText, '#e8edf5', 'Diferencia de gasto mensual entre comprar y alquilar (incluye expensas)') +
       ind('Reserva post-compra', emText, emColor, emHint) +
       '</div>';

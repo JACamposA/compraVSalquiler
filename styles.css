@@ -882,3 +882,15 @@ body.quarto-light #sim-app .qwebr-output-code-area code.qwebr-output-code-stdout
   margin-top: 8px;
   line-height: 1.45;
 }
+
+#sim-app .qwebr-output-code-area .rs-no-califica-banner {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-left: 3px solid #ff6b6b;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.84rem;
+  color: #ffb3b3;
+  line-height: 1.45;
+}
